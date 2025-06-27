@@ -20,6 +20,7 @@ import bc;
 import cal;
 import chkconfig;
 import cksum;
+import cmp;
 
 string[] history;
 string[string] aliases;
@@ -924,6 +925,38 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             foreach(f; files)
                 cksumFile(f);
         }
+    } else if(op == "cmp") {
+        bool optC = false;
+        bool optL = false;
+        bool optSilent = false;
+        size_t ignore = 0;
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-")) {
+            auto t = tokens[idx];
+            if(t == "-c" || t == "--print-chars") optC = true;
+            else if(t == "-l" || t == "--verbose") optL = true;
+            else if(t == "-s" || t == "--quiet" || t == "--silent") optSilent = true;
+            else if(t.startsWith("--ignore-initial="))
+                ignore = to!size_t(t[17 .. $]);
+            else if(t == "-v" || t == "--version") {
+                writeln("cmp (shell builtin) 1.0");
+                return;
+            } else if(t == "--") {
+                idx++;
+                break;
+            } else {
+                break;
+            }
+            idx++;
+        }
+        if(idx >= tokens.length) {
+            writeln("Usage: cmp [OPTION]... FILE1 [FILE2]");
+            return;
+        }
+        string file1 = tokens[idx];
+        string file2 = (idx + 1 < tokens.length) ? tokens[idx + 1] : "-";
+
+        cmp.cmpFiles(file1, file2, ignore, optC, optL, optSilent);
     } else if(op == "cal") {
         bool monday = false;
         bool yearFlag = false;
