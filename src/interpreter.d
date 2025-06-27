@@ -36,6 +36,7 @@ import crontab;
 import csplit;
 import cut;
 import date;
+import dos2unix;
 
 string[] history;
 string[string] aliases;
@@ -1106,6 +1107,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         diff.diffCommand(tokens);
     } else if(op == "diff3") {
         diff3.diff3Command(tokens);
+    } else if(op == "dos2unix") {
+        dos2unix.dos2unixCommand(tokens);
     } else if(op == "comm") {
         bool s1 = false;
         bool s2 = false;
