@@ -278,6 +278,22 @@ void runCommand(string cmd) {
             auto name = tokens[1];
             if(auto val = name in aliases) writeln(name, "=", *val);
         }
+    } else if(op == "apropos") {
+        if(tokens.length < 2) {
+            writeln("Usage: apropos keyword");
+            return;
+        }
+        string helpText;
+        try {
+            helpText = readText("commands.txt");
+        } catch(Exception e) {
+            writeln("commands.txt not found");
+            return;
+        }
+        auto pattern = tokens[1].toLower;
+        foreach(line; helpText.splitLines) {
+            if(line.toLower.canFind(pattern)) writeln(line);
+        }
     } else if(op == "help") {
         string helpText;
         try {
