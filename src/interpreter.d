@@ -21,6 +21,7 @@ import cal;
 import chkconfig;
 import cksum;
 import cmp;
+import comm;
 
 string[] history;
 string[string] aliases;
@@ -957,6 +958,46 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         string file2 = (idx + 1 < tokens.length) ? tokens[idx + 1] : "-";
 
         cmp.cmpFiles(file1, file2, ignore, optC, optL, optSilent);
+    } else if(op == "comm") {
+        bool s1 = false;
+        bool s2 = false;
+        bool s3 = false;
+        bool check = false;
+        string delim = "\t";
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-")) {
+            auto t = tokens[idx];
+            if(t == "-1") s1 = true;
+            else if(t == "-2") s2 = true;
+            else if(t == "-3") s3 = true;
+            else if(t == "--check-order") check = true;
+            else if(t == "--nocheck-order") check = false;
+            else if(t.startsWith("--output-delimiter="))
+                delim = t[19 .. $];
+            else if(t == "--output-delimiter") {
+                if(idx + 1 < tokens.length) { delim = tokens[idx + 1]; idx++; }
+            } else if(t == "--version") {
+                writeln("comm (shell builtin) 1.0");
+                return;
+            } else if(t == "--help") {
+                writeln("Usage: comm [OPTION]... FILE1 FILE2");
+                return;
+            } else if(t == "--") {
+                idx++;
+                break;
+            } else {
+                break;
+            }
+            idx++;
+        }
+        if(idx + 1 >= tokens.length) {
+            writeln("Usage: comm [OPTION]... FILE1 FILE2");
+            return;
+        }
+        string file1 = tokens[idx];
+        string file2 = tokens[idx + 1];
+
+        comm.commFiles(file1, file2, s1, s2, s3, check, delim);
     } else if(op == "cal") {
         bool monday = false;
         bool yearFlag = false;
