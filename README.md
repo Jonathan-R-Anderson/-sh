@@ -38,6 +38,7 @@ The interpreter now supports a broader set of commands:
  - run recurring scheduled jobs with `cron`
  - manage cron tables with `crontab`
 - compression utilities with `bzip2`
+- `dd` to copy and convert data in blocks
 - manage service runlevels with `chkconfig`
 - `caller` to display the current call stack frame
 

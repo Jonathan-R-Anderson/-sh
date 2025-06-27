@@ -18,6 +18,7 @@ import base32;
 import base64;
 import bc;
 import dc;
+import dd;
 import cal;
 import chkconfig;
 import cksum;
@@ -257,6 +258,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         } catch(Exception e) {
             writeln("dc: invalid expression");
         }
+    } else if(op == "dd") {
+        ddCommand(tokens);
     } else if(op == "for") {
         if(tokens.length < 3) {
             writeln("Usage: for start..end command");
