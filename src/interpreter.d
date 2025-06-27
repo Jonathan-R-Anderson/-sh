@@ -13,6 +13,7 @@ import std.conv : to;
 import core.thread : Thread;
 import std.datetime : Clock, SysTime;
 import core.time : dur;
+import base32;
 
 string[] history;
 string[string] aliases;
@@ -298,6 +299,68 @@ void runCommand(string cmd) {
                 base = base[0 .. $ - suf.length];
         }
         writeln(base);
+    } else if(op == "base32") {
+        bool decode = false;
+        bool ignore = false;
+        size_t wrapLen = 76;
+        string[] files;
+        size_t i = 1;
+        while(i < tokens.length) {
+            auto t = tokens[i];
+            if(t == "-d" || t == "--decode") {
+                decode = true;
+            } else if(t == "-i" || t == "--ignore-garbage") {
+                ignore = true;
+            } else if(t.startsWith("--wrap=")) {
+                wrapLen = to!size_t(t[7 .. $]);
+            } else if(t == "-w" || t == "--wrap") {
+                if(i + 1 < tokens.length) {
+                    wrapLen = to!size_t(tokens[i + 1]);
+                    i++;
+                }
+            } else if(t == "--help") {
+                writeln("Usage: base32 [OPTION]... [FILE]");
+                writeln("  -d, --decode          Decode data");
+                writeln("  -i, --ignore-garbage  Ignore non-alphabet characters");
+                writeln("  -w, --wrap=COLS       Wrap encoded lines after COLS (default 76)");
+                return;
+            } else if(t == "--version") {
+                writeln("base32 (shell builtin) 1.0");
+                return;
+            } else {
+                files ~= t;
+            }
+            i++;
+        }
+
+        auto process = (string txt) {
+            if(decode) {
+                auto bytes = base32Decode(txt, ignore);
+                writeln(cast(string)bytes);
+            } else {
+                auto encoded = base32Encode(cast(ubyte[])txt, wrapLen);
+                if(wrapLen == 0)
+                    write(encoded);
+                else
+                    writeln(encoded);
+            }
+        };
+
+        if(files.length == 0) {
+            string line;
+            while((line = readln()) !is null) {
+                process(line);
+            }
+        } else {
+            foreach(f; files) {
+                try {
+                    auto content = readText(f);
+                    process(content);
+                } catch(Exception e) {
+                    writeln("base32: cannot read ", f);
+                }
+            }
+        }
     } else if(op == "mkdir") {
         if(tokens.length < 2) {
             writeln("mkdir: missing operand");
