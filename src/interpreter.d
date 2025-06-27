@@ -18,6 +18,7 @@ import base32;
 import base64;
 import bc;
 import cal;
+import chkconfig;
 
 string[] history;
 string[string] aliases;
@@ -912,6 +913,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         } else {
             writeln("cfdisk: invalid -P option");
         }
+    } else if(op == "chkconfig") {
+        chkconfigCommand(tokens);
     } else if(op == "cal") {
         bool monday = false;
         bool yearFlag = false;
