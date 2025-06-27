@@ -221,3 +221,38 @@ lfe> (c "tut25.lfe")
 lfe> (tut25:demo)
 1245
 ```
+
+## Object System
+
+The REPL now includes a minimal object oriented layer implemented in `objectsystem.d`. Objects are referenced by an identifier and can be manipulated through new builtins:
+
+```
+(resolve path)           ; locate an object by path
+(bind src dst)           ; bind an existing object to a new path
+(clone obj)              ; duplicate an object
+(delete obj)             ; remove an object
+(list obj)               ; list child names
+(introspect obj)         ; return object info string
+(rename obj new)         ; rename an object
+(getType obj)            ; return the type string
+(getProp obj key)        ; fetch a property
+(setProp obj key val)    ; set a property value
+(listProps obj)          ; list property keys
+(delProp obj key)        ; delete a property
+(listMethods obj)        ; list method names
+(call obj method args..) ; invoke a method (placeholder)
+(describeMethod obj m)   ; describe a method
+(createObject type)      ; create a new object of a type
+(instantiate classPath)  ; alias for createObject
+(defineClass path def)   ; stub for class definitions
+(attach parent child alias)
+(detach parent name)
+(getParent obj)
+(getChildren obj)
+(sandbox obj)
+(isIsolated obj)
+(seal obj)
+(verify obj)
+```
+
+These commands provide a simple demonstration of integrating an OOP style with the existing LFE interpreter written in D.

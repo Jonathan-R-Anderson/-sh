@@ -17,6 +17,7 @@ import core.sync.mutex : Mutex;
 import core.sync.condition : Condition;
 import std.process : system;
 version(Posix) import core.sys.posix.unistd : execvp;
+import objectsystem;
 
 struct Expr {
     bool isList;
@@ -1262,6 +1263,129 @@ Value evalList(Expr e) {
             import core.stdc.stdlib : exit;
             exit(rc);
         }
+    } else if(head == "resolve") {
+        auto pathVal = evalExpr(e.list[1]);
+        string p = valueToString(pathVal);
+        auto h = objectsystem.resolve(p);
+        return atomVal(h.length ? h : "undefined");
+    } else if(head == "bind") {
+        auto srcVal = evalExpr(e.list[1]);
+        auto dstVal = evalExpr(e.list[2]);
+        bool ok = objectsystem.bind(valueToString(srcVal), valueToString(dstVal));
+        return atomVal(ok ? "true" : "false");
+    } else if(head == "clone") {
+        auto objVal = evalExpr(e.list[1]);
+        auto id = objectsystem.cloneObj(valueToString(objVal));
+        return atomVal(id.length ? id : "undefined");
+    } else if(head == "delete") {
+        auto objVal = evalExpr(e.list[1]);
+        bool ok = objectsystem.deleteObj(valueToString(objVal));
+        return atomVal(ok ? "true" : "false");
+    } else if(head == "list") {
+        auto objVal = evalExpr(e.list[1]);
+        auto items = objectsystem.list(valueToString(objVal));
+        Value[] vals;
+        foreach(i; items) vals ~= atomVal(i);
+        return listVal(vals);
+    } else if(head == "introspect") {
+        auto objVal = evalExpr(e.list[1]);
+        auto info = objectsystem.introspect(valueToString(objVal));
+        return atomVal(info);
+    } else if(head == "rename") {
+        auto objVal = evalExpr(e.list[1]);
+        auto newVal = evalExpr(e.list[2]);
+        bool ok = objectsystem.rename(valueToString(objVal), valueToString(newVal));
+        return atomVal(ok ? "true" : "false");
+    } else if(head == "getType") {
+        auto objVal = evalExpr(e.list[1]);
+        auto t = objectsystem.getType(valueToString(objVal));
+        return atomVal(t);
+    } else if(head == "getProp") {
+        auto objVal = evalExpr(e.list[1]);
+        auto keyVal = evalExpr(e.list[2]);
+        auto val = objectsystem.getProp(valueToString(objVal), valueToString(keyVal));
+        return atomVal(val);
+    } else if(head == "setProp") {
+        auto objVal = evalExpr(e.list[1]);
+        auto keyVal = evalExpr(e.list[2]);
+        auto valVal = evalExpr(e.list[3]);
+        bool ok = objectsystem.setProp(valueToString(objVal), valueToString(keyVal), valueToString(valVal));
+        return atomVal(ok ? "true" : "false");
+    } else if(head == "listProps") {
+        auto objVal = evalExpr(e.list[1]);
+        auto props = objectsystem.listProps(valueToString(objVal));
+        Value[] vals; foreach(p; props) vals ~= atomVal(p);
+        return listVal(vals);
+    } else if(head == "delProp") {
+        auto objVal = evalExpr(e.list[1]);
+        auto keyVal = evalExpr(e.list[2]);
+        bool ok = objectsystem.delProp(valueToString(objVal), valueToString(keyVal));
+        return atomVal(ok ? "true" : "false");
+    } else if(head == "listMethods") {
+        auto objVal = evalExpr(e.list[1]);
+        auto meths = objectsystem.listMethods(valueToString(objVal));
+        Value[] vals; foreach(m; meths) vals ~= atomVal(m);
+        return listVal(vals);
+    } else if(head == "call") {
+        auto objVal = evalExpr(e.list[1]);
+        auto mVal = evalExpr(e.list[2]);
+        string[] args; foreach(a; e.list[3 .. $]) args ~= valueToString(evalExpr(a));
+        auto res = objectsystem.callMethod(valueToString(objVal), valueToString(mVal), args);
+        return atomVal(res);
+    } else if(head == "describeMethod") {
+        auto objVal = evalExpr(e.list[1]);
+        auto mVal = evalExpr(e.list[2]);
+        auto d = objectsystem.describeMethod(valueToString(objVal), valueToString(mVal));
+        return atomVal(d);
+    } else if(head == "createObject") {
+        auto tVal = evalExpr(e.list[1]);
+        auto id = objectsystem.createObject(valueToString(tVal));
+        return atomVal(id);
+    } else if(head == "instantiate") {
+        auto cVal = evalExpr(e.list[1]);
+        auto id = objectsystem.instantiate(valueToString(cVal));
+        return atomVal(id);
+    } else if(head == "defineClass") {
+        auto pVal = evalExpr(e.list[1]);
+        auto dVal = evalExpr(e.list[2]);
+        bool ok = objectsystem.defineClass(valueToString(pVal), valueToString(dVal));
+        return atomVal(ok ? "true" : "false");
+    } else if(head == "attach") {
+        auto parent = valueToString(evalExpr(e.list[1]));
+        auto child = valueToString(evalExpr(e.list[2]));
+        auto alias = valueToString(evalExpr(e.list[3]));
+        bool ok = objectsystem.attach(parent, child, alias);
+        return atomVal(ok ? "true" : "false");
+    } else if(head == "detach") {
+        auto parent = valueToString(evalExpr(e.list[1]));
+        auto name = valueToString(evalExpr(e.list[2]));
+        bool ok = objectsystem.detach(parent, name);
+        return atomVal(ok ? "true" : "false");
+    } else if(head == "getParent") {
+        auto objVal = evalExpr(e.list[1]);
+        auto p = objectsystem.getParent(valueToString(objVal));
+        return atomVal(p);
+    } else if(head == "getChildren") {
+        auto objVal = evalExpr(e.list[1]);
+        auto ch = objectsystem.getChildren(valueToString(objVal));
+        Value[] vals; foreach(c; ch) vals ~= atomVal(c);
+        return listVal(vals);
+    } else if(head == "sandbox") {
+        auto objVal = evalExpr(e.list[1]);
+        auto id = objectsystem.sandbox(valueToString(objVal));
+        return atomVal(id);
+    } else if(head == "isIsolated") {
+        auto objVal = evalExpr(e.list[1]);
+        bool iso = objectsystem.isIsolated(valueToString(objVal));
+        return atomVal(iso ? "true" : "false");
+    } else if(head == "seal") {
+        auto objVal = evalExpr(e.list[1]);
+        bool ok = objectsystem.seal(valueToString(objVal));
+        return atomVal(ok ? "true" : "false");
+    } else if(head == "verify") {
+        auto objVal = evalExpr(e.list[1]);
+        auto h = objectsystem.verify(valueToString(objVal));
+        return atomVal(h);
     } else if(head == "exit") {
         Value reason = atomVal("normal");
         if(e.list.length > 1) reason = evalExpr(e.list[1]);
