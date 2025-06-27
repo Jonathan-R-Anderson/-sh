@@ -7,6 +7,7 @@ import std.stdio;
 import std.string;
 import std.ascii : isDigit;
 import std.algorithm;
+import std.array;
 import std.conv : to;
 import std.utf;
 import std.file : readText, copy;
@@ -14,6 +15,8 @@ import std.parallelism;
 import cpio : createArchive, extractArchive;
 import core.sync.mutex : Mutex;
 import core.sync.condition : Condition;
+import std.process : system;
+version(Posix) import core.sys.posix.unistd : execvp;
 
 struct Expr {
     bool isList;
@@ -1230,6 +1233,35 @@ Value evalList(Expr e) {
             path = path[1 .. $-1];
         loadFile(path);
         return num(0);
+    } else if(head == "exec") {
+        if(e.list.length < 2) return atomVal("error");
+        string cmd = valueToString(evalExpr(e.list[1]));
+        string[] args;
+        foreach(expr; e.list[2 .. $]) {
+            auto v = evalExpr(expr);
+            string s = valueToString(v);
+            if(s.length >= 2 && s[0] == '"' && s[$-1] == '"')
+                s = s[1 .. $-1];
+            args ~= s;
+        }
+        if(cmd.length >= 2 && cmd[0] == '"' && cmd[$-1] == '"')
+            cmd = cmd[1 .. $-1];
+        version(Posix) {
+            import std.string : toStringz;
+            import core.stdc.stdlib : exit;
+            const(char)*[] argv;
+            argv ~= cmd.toStringz;
+            foreach(a; args) argv ~= a.toStringz;
+            argv ~= null;
+            execvp(cmd.toStringz, argv.ptr);
+            writeln("exec failed: " ~ cmd);
+            exit(127);
+        } else {
+            auto line = cmd ~ (args.length ? " " ~ args.join(" ") : "");
+            auto rc = system(line);
+            import core.stdc.stdlib : exit;
+            exit(rc);
+        }
     } else if(head == "exit") {
         Value reason = atomVal("normal");
         if(e.list.length > 1) reason = evalExpr(e.list[1]);
