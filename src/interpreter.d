@@ -54,6 +54,11 @@ void runParallel(string input) {
     }
 }
 
+void runBackground(string cmd) {
+    // Execute a command asynchronously without waiting
+    taskPool.put(() { run(cmd); });
+}
+
 void runCommand(string cmd) {
     history ~= cmd;
     auto tokens = cmd.split();
@@ -260,6 +265,13 @@ void runCommand(string cmd) {
         import std.datetime : Clock;
         auto now = Clock.currTime();
         writeln(now.toISOExtString());
+    } else if(op == "bg") {
+        if(tokens.length < 2) {
+            writeln("Usage: bg command");
+            return;
+        }
+        auto sub = tokens[1 .. $].join(" ");
+        runBackground(sub);
     } else if(op == "alias") {
         if(tokens.length == 1) {
             foreach(name, val; aliases) {
