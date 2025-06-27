@@ -42,6 +42,7 @@ The shell now records command history which can be viewed with `history`.
 Aliases may be managed with the `alias` builtin and removed using `unalias`.
 You can repeat the previous command by typing `!!`.
 Key sequences can be associated with commands using the `bind -x` builtin.
+The `builtin` command runs one of the shell's builtins directly, bypassing alias expansion.
 You can view a list of common Linux commands with the built-in `help` command,
 which prints the contents of `commands.txt`.
 The `apropos` command searches this help text for matching commands. It now

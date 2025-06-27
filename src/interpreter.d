@@ -64,7 +64,7 @@ int breakCount;
  * with the D cross-compiler.
  */
 
-void runCommand(string cmd);
+void runCommand(string cmd, bool skipAlias=false);
 void runParallel(string input);
 
 void run(string input) {
@@ -101,20 +101,22 @@ void runBackground(string cmd) {
     writeln("[", id, "] ", cmd, " &");
 }
 
-void runCommand(string cmd) {
+void runCommand(string cmd, bool skipAlias=false) {
     history ~= cmd;
     auto tokens = cmd.split();
     if(tokens.length == 0) return;
 
-    string lastAlias;
-    int aliasDepth = 0;
-    while(auto ali = tokens[0] in aliases) {
-        if(tokens[0] == lastAlias || aliasDepth > 10) break;
-        lastAlias = tokens[0];
-        auto aliStr = *ali;
-        auto aliTokens = aliStr.split();
-        tokens = aliTokens ~ tokens[1 .. $];
-        aliasDepth++;
+    if(!skipAlias) {
+        string lastAlias;
+        int aliasDepth = 0;
+        while(auto ali = tokens[0] in aliases) {
+            if(tokens[0] == lastAlias || aliasDepth > 10) break;
+            lastAlias = tokens[0];
+            auto aliStr = *ali;
+            auto aliTokens = aliStr.split();
+            tokens = aliTokens ~ tokens[1 .. $];
+            aliasDepth++;
+        }
     }
 
     // variable expansion
@@ -135,7 +137,14 @@ void runCommand(string cmd) {
     }
 
     auto op = tokens[0];
-    if(op == "echo") {
+    if(op == "builtin") {
+        if(tokens.length < 2) {
+            writeln("Usage: builtin shell-builtin [args]");
+            return;
+        }
+        auto subCmd = tokens[1 .. $].join(" ");
+        runCommand(subCmd, true);
+    } else if(op == "echo") {
         writeln(tokens[1 .. $].join(" "));
     } else if(op == "+" || op == "-" || op == "*" || op == "/") {
         if(tokens.length < 3) {
