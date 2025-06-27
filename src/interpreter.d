@@ -24,6 +24,7 @@ import dc;
 import dd;
 import ddrescue;
 import df;
+import dmesg;
 import cal;
 import chkconfig;
 import cksum;
@@ -274,6 +275,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         ddrescueCommand(tokens);
     } else if(op == "df") {
         dfCommand(tokens);
+    } else if(op == "dmesg") {
+        dmesgCommand(tokens);
     } else if(op == "for") {
         if(tokens.length < 3) {
             writeln("Usage: for start..end command");

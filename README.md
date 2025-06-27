@@ -41,6 +41,7 @@ The interpreter now supports a broader set of commands:
 - `dd` to copy and convert data in blocks
 - `ddrescue` for data recovery from damaged disks
 - `df` to display free disk space
+- `dmesg` to print kernel messages
 - manage service runlevels with `chkconfig`
 - `caller` to display the current call stack frame
 
