@@ -29,12 +29,17 @@ The interpreter now supports a broader set of commands:
 - Haskell-style `for` loops, e.g. `for 1..3 echo hi`
 - concurrent commands using `&`, e.g. `echo one & echo two`
 - sequential commands separated by `;`
+- file utilities such as `cp`, `mv`, `rm`, `mkdir`, `rmdir`, and `touch`
+- text display commands like `cat`, `head`, `tail`, and `grep`
+- `date` for the current time
 
 Running the interpreter with no command argument starts an interactive shell.
 You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`). Type `exit` to leave the shell.
 The shell now records command history which can be viewed with `history` and
 supports basic aliases using the `alias` builtin. You can repeat the previous
 command by typing `!!`.
+You can view a list of common Linux commands with the built-in `help` command,
+which prints the contents of `commands.txt`.
 
 These examples demonstrate how additional Bash commands can be layered on top of a Haskell-inspired syntax. The goal remains to eventually cover the full Bash command set, including job control and other special operators.
 

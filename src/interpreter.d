@@ -4,7 +4,8 @@ import std.array;
 import std.algorithm;
 import std.parallelism;
 import std.range;
-import std.file : chdir, getcwd, dirEntries, SpanMode;
+import std.file : chdir, getcwd, dirEntries, SpanMode, readText,
+    copy, rename, remove, mkdir, rmdir;
 import std.process : system, environment;
 
 string[] history;
@@ -127,6 +128,138 @@ void runCommand(string cmd) {
         foreach(entry; dirEntries(path, SpanMode.shallow)) {
             writeln(entry.name);
         }
+    } else if(op == "cat") {
+        if(tokens.length < 2) {
+            writeln("cat: missing file operand");
+            return;
+        }
+        foreach(f; tokens[1 .. $]) {
+            try {
+                writeln(readText(f));
+            } catch(Exception e) {
+                writeln("cat: cannot read ", f);
+            }
+        }
+    } else if(op == "head") {
+        if(tokens.length < 2) {
+            writeln("head: missing file operand");
+            return;
+        }
+        string file = tokens[1];
+        size_t lines = 10;
+        try {
+            auto text = readText(file).splitLines;
+            foreach(i, l; text) {
+                if(i >= lines) break;
+                writeln(l);
+            }
+        } catch(Exception e) {
+            writeln("head: cannot read ", file);
+        }
+    } else if(op == "tail") {
+        if(tokens.length < 2) {
+            writeln("tail: missing file operand");
+            return;
+        }
+        string file = tokens[1];
+        size_t lines = 10;
+        try {
+            auto text = readText(file).splitLines;
+            auto start = text.length > lines ? text.length - lines : 0;
+            foreach(l; text[start .. $]) {
+                writeln(l);
+            }
+        } catch(Exception e) {
+            writeln("tail: cannot read ", file);
+        }
+    } else if(op == "grep") {
+        if(tokens.length < 3) {
+            writeln("grep pattern file...");
+            return;
+        }
+        auto pattern = tokens[1];
+        foreach(f; tokens[2 .. $]) {
+            try {
+                foreach(line; readText(f).splitLines) {
+                    if(line.canFind(pattern)) writeln(line);
+                }
+            } catch(Exception e) {
+                writeln("grep: cannot read ", f);
+            }
+        }
+    } else if(op == "mkdir") {
+        if(tokens.length < 2) {
+            writeln("mkdir: missing operand");
+            return;
+        }
+        foreach(dir; tokens[1 .. $]) {
+            try {
+                std.file.mkdir(dir);
+            } catch(Exception e) {
+                writeln("mkdir: cannot create directory ", dir);
+            }
+        }
+    } else if(op == "rmdir") {
+        if(tokens.length < 2) {
+            writeln("rmdir: missing operand");
+            return;
+        }
+        foreach(dir; tokens[1 .. $]) {
+            try {
+                std.file.rmdir(dir);
+            } catch(Exception e) {
+                writeln("rmdir: failed to remove ", dir);
+            }
+        }
+    } else if(op == "touch") {
+        if(tokens.length < 2) {
+            writeln("touch: missing file operand");
+            return;
+        }
+        foreach(f; tokens[1 .. $]) {
+            try {
+                auto file = File(f, "a");
+                file.close();
+            } catch(Exception e) {
+                writeln("touch: cannot touch ", f);
+            }
+        }
+    } else if(op == "cp") {
+        if(tokens.length != 3) {
+            writeln("cp source dest");
+            return;
+        }
+        try {
+            std.file.copy(tokens[1], tokens[2]);
+        } catch(Exception e) {
+            writeln("cp: failed to copy");
+        }
+    } else if(op == "mv") {
+        if(tokens.length != 3) {
+            writeln("mv source dest");
+            return;
+        }
+        try {
+            std.file.rename(tokens[1], tokens[2]);
+        } catch(Exception e) {
+            writeln("mv: failed to move");
+        }
+    } else if(op == "rm") {
+        if(tokens.length < 2) {
+            writeln("rm: missing operand");
+            return;
+        }
+        foreach(f; tokens[1 .. $]) {
+            try {
+                std.file.remove(f);
+            } catch(Exception e) {
+                writeln("rm: cannot remove ", f);
+            }
+        }
+    } else if(op == "date") {
+        import std.datetime : Clock;
+        auto now = Clock.currTime();
+        writeln(now.toISOExtString());
     } else if(op == "alias") {
         if(tokens.length == 1) {
             foreach(name, val; aliases) {
@@ -145,6 +278,14 @@ void runCommand(string cmd) {
             auto name = tokens[1];
             if(auto val = name in aliases) writeln(name, "=", *val);
         }
+    } else if(op == "help") {
+        string helpText;
+        try {
+            helpText = readText("commands.txt");
+        } catch(Exception e) {
+            helpText = "commands.txt not found";
+        }
+        writeln(helpText);
     } else if(op == "history") {
         foreach(i, cmdLine; history) {
             writeln(i + 1, " ", cmdLine);
