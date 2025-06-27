@@ -33,7 +33,7 @@ The interpreter now supports a broader set of commands:
 - `jobs` to list background jobs
 - sequential commands separated by `;`
 - file utilities such as `cp`, `mv`, `rm`, `mkdir`, `rmdir`, `touch`, `chattr`, and `chown`
-- text display commands like `cat`, `head`, `tail`, and `grep`
+ - text display commands like `cat`, `head`, `tail`, `grep`, and `fgrep`
 - `date` for the current time
  - schedule commands using `at`
  - run recurring scheduled jobs with `cron`
