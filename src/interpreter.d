@@ -24,6 +24,7 @@ import dc;
 import dd;
 import ddrescue;
 import df;
+import du;
 import dmesg;
 import cal;
 import chkconfig;
@@ -275,6 +276,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         ddrescueCommand(tokens);
     } else if(op == "df") {
         dfCommand(tokens);
+    } else if(op == "du") {
+        duCommand(tokens);
     } else if(op == "dmesg") {
         dmesgCommand(tokens);
     } else if(op == "for") {
