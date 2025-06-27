@@ -35,6 +35,7 @@ The interpreter now supports a broader set of commands:
 - text display commands like `cat`, `head`, `tail`, and `grep`
 - `date` for the current time
 - schedule commands using `at`
+- run recurring scheduled jobs with `cron`
 - compression utilities with `bzip2`
 - manage service runlevels with `chkconfig`
 - `caller` to display the current call stack frame
