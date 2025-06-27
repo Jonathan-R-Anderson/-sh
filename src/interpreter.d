@@ -766,6 +766,16 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         auto rc = system("chgrp " ~ args);
         if(rc != 0)
             writeln("chgrp failed with code ", rc);
+    } else if(op == "chmod") {
+        if(tokens.length < 3 &&
+           !(tokens.length >= 2 && tokens[1].startsWith("--reference="))) {
+            writeln("Usage: chmod mode file...");
+            return;
+        }
+        auto args = tokens[1 .. $].join(" ");
+        auto rc = system("chmod " ~ args);
+        if(rc != 0)
+            writeln("chmod failed with code ", rc);
     } else if(op == "cfdisk") {
         string optP;
         string device = "/dev/vda";
