@@ -15,6 +15,37 @@ struct Expr {
     string atom;
     Expr[] list;
     bool isAtom;
+    bool isTuple;
+}
+
+enum ValueKind { Number, Atom, Tuple }
+
+struct Value {
+    ValueKind kind;
+    double number;
+    string atom;
+    Value[] tuple;
+}
+
+Value num(double n) { return Value(ValueKind.Number, n, "", null); }
+Value atomVal(string a) { return Value(ValueKind.Atom, 0, a, null); }
+Value tupleVal(Value[] t) { return Value(ValueKind.Tuple, 0, "", t); }
+
+string valueToString(Value v) {
+    final switch(v.kind) {
+        case ValueKind.Number:
+            return to!string(v.number);
+        case ValueKind.Atom:
+            return "'" ~ v.atom;
+        case ValueKind.Tuple:
+            string s;
+            foreach(elem; v.tuple) {
+                s ~= valueToString(elem) ~ " ";
+            }
+            if(s.length > 0) s = s[0 .. $-1];
+            return "#(" ~ s ~ ")";
+    }
+    return "";
 }
 
 class LfeParser : Parser {
@@ -23,7 +54,16 @@ class LfeParser : Parser {
     }
 
     Expr parseExpr() {
-        if (peek("LPAREN")) {
+        if (peek("HASHLPAREN")) {
+            consume("HASHLPAREN");
+            Expr[] elems;
+            while (!peek("RPAREN")) {
+                elems ~= parseExpr();
+                if (pos >= tokens.length) break;
+            }
+            consume("RPAREN");
+            return Expr(true, "", elems, false, true);
+        } else if (peek("LPAREN")) {
             consume("LPAREN");
             Expr[] elems;
             while (!peek("RPAREN")) {
@@ -31,19 +71,19 @@ class LfeParser : Parser {
                 if (pos >= tokens.length) break;
             }
             consume("RPAREN");
-            return Expr(true, "", elems, false);
+            return Expr(true, "", elems, false, false);
         } else if (peek("NUMBER")) {
             auto t = consume("NUMBER");
-            return Expr(false, t.value, null, false);
+            return Expr(false, t.value, null, false, false);
         } else if (peek("STRING")) {
             auto t = consume("STRING");
-            return Expr(false, t.value, null, false);
+            return Expr(false, t.value, null, false, false);
         } else if (peek("ATOM")) {
             auto t = consume("ATOM");
-            return Expr(false, t.value[1 .. $], null, true);
+            return Expr(false, t.value[1 .. $], null, true, false);
         } else if (peek("SYMBOL")) {
             auto t = consume("SYMBOL");
-            return Expr(false, t.value, null, false);
+            return Expr(false, t.value, null, false, false);
         }
         throw new Exception("Unexpected token");
     }
@@ -54,7 +94,7 @@ struct FunctionClause {
     Expr body;
 }
 
-double[string] variables;
+Value[string] variables;
 FunctionClause[][string] functions;
 
 bool isNumber(string s) {
@@ -71,9 +111,10 @@ bool isNumber(string s) {
     return true;
 }
 
-double evalExpr(Expr e);
+Value evalExpr(Expr e);
 
 immutable Rule[] rules = [
+    Rule("HASHLPAREN", regex("#\\(")),
     Rule("LPAREN", regex("\\(")),
     Rule("RPAREN", regex("\\)")),
     Rule("STRING", regex("\"[^\"]*\"")),
@@ -107,25 +148,51 @@ void loadFile(string path) {
     }
 }
 
-double evalList(Expr e) {
-    if(e.list.length == 0) return 0;
+bool matchPattern(Value val, Expr pat, ref string[] varNames, ref Value[string] saved) {
+    if(pat.isAtom) {
+        return val.kind == ValueKind.Atom && val.atom == pat.atom;
+    }
+    if(pat.isTuple || (pat.isList && pat.list.length > 0 && !pat.list[0].isList && pat.list[0].atom == "tuple")) {
+        auto elems = pat.isTuple ? pat.list : pat.list[1 .. $];
+        if(val.kind != ValueKind.Tuple || val.tuple.length != elems.length) return false;
+        foreach(i, pe; elems) {
+            if(!matchPattern(val.tuple[i], pe, varNames, saved)) return false;
+        }
+        return true;
+    }
+    if(!pat.isList) {
+        auto name = pat.atom;
+        if(name in variables) saved[name] = variables[name];
+        variables[name] = val;
+        varNames ~= name;
+        return true;
+    }
+    return false;
+}
+
+Value evalList(Expr e) {
+    if(e.list.length == 0) return num(0);
     auto head = e.list[0].atom;
     if(head == "+") {
         double result = 0;
-        foreach(arg; e.list[1 .. $]) result += evalExpr(arg);
-        return result;
+        foreach(arg; e.list[1 .. $]) result += evalExpr(arg).number;
+        return num(result);
     } else if(head == "-") {
-        double result = evalExpr(e.list[1]);
-        foreach(arg; e.list[2 .. $]) result -= evalExpr(arg);
-        return result;
+        double result = evalExpr(e.list[1]).number;
+        foreach(arg; e.list[2 .. $]) result -= evalExpr(arg).number;
+        return num(result);
     } else if(head == "*") {
         double result = 1;
-        foreach(arg; e.list[1 .. $]) result *= evalExpr(arg);
-        return result;
+        foreach(arg; e.list[1 .. $]) result *= evalExpr(arg).number;
+        return num(result);
     } else if(head == "/") {
-        double result = evalExpr(e.list[1]);
-        foreach(arg; e.list[2 .. $]) result /= evalExpr(arg);
-        return result;
+        double result = evalExpr(e.list[1]).number;
+        foreach(arg; e.list[2 .. $]) result /= evalExpr(arg).number;
+        return num(result);
+    } else if(head == "tuple") {
+        Value[] els;
+        foreach(arg; e.list[1 .. $]) els ~= evalExpr(arg);
+        return tupleVal(els);
     } else if(head == "set") {
         auto name = e.list[1].atom;
         auto val = evalExpr(e.list[2]);
@@ -146,7 +213,7 @@ double evalList(Expr e) {
             clauses ~= FunctionClause(params, body);
         }
         functions[name] = clauses;
-        return 0;
+        return num(0);
     } else if(head == "defmodule") {
         auto modName = e.list[1].atom;
         foreach(expr; e.list[2 .. $]) {
@@ -167,14 +234,14 @@ double evalList(Expr e) {
                 functions[modName ~ ":" ~ fname] = clauses;
             }
         }
-        return 0;
+        return num(0);
     } else if(head == "c") {
         auto fexpr = e.list[1];
         auto path = fexpr.atom;
         if(path.length >= 2 && path[0] == '"' && path[$-1] == '"')
             path = path[1 .. $-1];
         loadFile(path);
-        return 0;
+        return num(0);
     } else if(head == "exit") {
         // signal to caller
         throw new Exception("__exit__");
@@ -185,18 +252,12 @@ double evalList(Expr e) {
             if(clause.params.length != args.length) continue;
             bool match = true;
             string[] varNames;
-            double[string] saved;
+            Value[string] saved;
+            Value[] argVals;
+            foreach(a; args) argVals ~= evalExpr(a);
             foreach(i, pexp; clause.params) {
-                auto arg = args[i];
-                if(pexp.isAtom) {
-                    if(!(arg.isAtom && arg.atom == pexp.atom)) { match = false; break; }
-                } else {
-                    auto val = evalExpr(arg);
-                    auto name = pexp.atom;
-                    if(name in variables) saved[name] = variables[name];
-                    variables[name] = val;
-                    varNames ~= name;
-                }
+                auto val = argVals[i];
+                if(!matchPattern(val, pexp, varNames, saved)) { match = false; break; }
             }
             if(match) {
                 auto result = evalExpr(clause.body);
@@ -208,16 +269,22 @@ double evalList(Expr e) {
                 foreach(n; varNames) if(!(n in saved)) variables.remove(n);
             }
         }
-        return 0;
+        return num(0);
     }
-    return 0;
+    return num(0);
 }
 
-double evalExpr(Expr e) {
+Value evalExpr(Expr e) {
     if(!e.isList) {
-        if(isNumber(e.atom)) return to!double(e.atom);
+        if(e.isAtom) return atomVal(e.atom);
+        if(isNumber(e.atom)) return num(to!double(e.atom));
         if(auto v = e.atom in variables) return *v;
-        return 0;
+        return num(0);
+    }
+    if(e.isTuple) {
+        Value[] elems;
+        foreach(sub; e.list) elems ~= evalExpr(sub);
+        return tupleVal(elems);
     }
     return evalList(e);
 }
@@ -238,7 +305,7 @@ void repl() {
         try {
             ast = parser.parseExpr();
             auto result = evalExpr(ast);
-            writeln(result);
+            writeln(valueToString(result));
         } catch(Exception e) {
             if(e.msg == "__exit__") break;
             writeln("Error: ", e.msg);
