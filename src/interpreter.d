@@ -67,7 +67,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "for", "grep", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "for", "grep", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -611,6 +611,57 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         egrep.egrepCommand(tokens);
     } else if(op == "eject") {
         eject.ejectCommand(tokens);
+    } else if(op == "env") {
+        bool ignore = false;
+        string[] unsets;
+        string[string] assigns;
+        size_t idx = 1;
+        while(idx < tokens.length) {
+            auto t = tokens[idx];
+            if(t == "-" || t == "-i" || t == "--ignore-environment") {
+                ignore = true;
+                idx++;
+            } else if(t == "-u" || t == "--unset") {
+                if(idx + 1 >= tokens.length) {
+                    writeln("env: option requires an argument -- 'u'");
+                    return;
+                }
+                unsets ~= tokens[idx + 1];
+                idx += 2;
+            } else if(t.startsWith("-u") && t.length > 2) {
+                unsets ~= t[2 .. $];
+                idx++;
+            } else if(t.startsWith("--unset=")) {
+                unsets ~= t[8 .. $];
+                idx++;
+            } else if(t.indexOf('=') > 0 && !t.startsWith("-")) {
+                auto pos = t.indexOf('=');
+                assigns[t[0 .. pos]] = t[pos+1 .. $];
+                idx++;
+            } else {
+                break;
+            }
+        }
+
+        auto cmdArgs = tokens[idx .. $];
+        auto oldEnv = environment.toAA;
+        if(ignore) {
+            foreach(name, _; oldEnv) environment.remove(name);
+        }
+        foreach(name; unsets) environment.remove(name);
+        foreach(name, val; assigns) environment[name] = val;
+
+        if(cmdArgs.length == 0) {
+            foreach(name, val; environment.toAA) {
+                writeln(name, "=", val);
+            }
+        } else {
+            auto sub = cmdArgs.join(" ");
+            runCommand(sub, false, __LINE__, __FILE__);
+        }
+
+        foreach(name, _; environment.toAA) environment.remove(name);
+        foreach(name, val; oldEnv) environment[name] = val;
     } else if(op == "awk") {
         if(tokens.length < 2) {
             writeln("awk program [file...]");
