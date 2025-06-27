@@ -33,6 +33,7 @@ The interpreter now supports a broader set of commands:
 - file utilities such as `cp`, `mv`, `rm`, `mkdir`, `rmdir`, and `touch`
 - text display commands like `cat`, `head`, `tail`, and `grep`
 - `date` for the current time
+- schedule commands using `at`
 
 Running the interpreter with no command argument starts an interactive shell.
 You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`). Type `exit` to leave the shell.

@@ -9,6 +9,10 @@ import std.file : chdir, getcwd, dirEntries, SpanMode, readText,
 import std.process : system, environment;
 import std.regex : regex, matchFirst;
 import std.path : globMatch;
+import std.conv : to;
+import core.thread : Thread;
+import std.datetime : Clock, SysTime;
+import core.time : dur;
 
 string[] history;
 string[string] aliases;
@@ -25,6 +29,16 @@ string[string] colorCodes = [
     "cyan": "\033[36m",
     "white": "\033[37m"
 ];
+
+struct AtJob {
+    size_t id;
+    string cmd;
+    SysTime runAt;
+    bool canceled;
+}
+
+AtJob[] atJobs;
+size_t nextAtId;
 
 /**
  * Simple interpreter skeleton for a Lisp-like language.
@@ -281,6 +295,40 @@ void runCommand(string cmd) {
         }
         auto sub = tokens[1 .. $].join(" ");
         runBackground(sub);
+    } else if(op == "at") {
+        if(tokens.length < 3) {
+            writeln("Usage: at seconds command");
+            return;
+        }
+        auto delay = to!long(tokens[1]);
+        auto sub = tokens[2 .. $].join(" ");
+        auto runAt = Clock.currTime() + dur!"seconds"(delay);
+        auto job = AtJob(nextAtId++, sub, runAt, false);
+        atJobs ~= job;
+        auto idx = atJobs.length - 1;
+        taskPool.put(() {
+            Thread.sleep(dur!"seconds"(delay));
+            if(!atJobs[idx].canceled) {
+                run(sub);
+                atJobs[idx].canceled = true;
+            }
+        });
+        writeln("job ", job.id, " scheduled for ", runAt.toISOExtString());
+    } else if(op == "atq") {
+        foreach(job; atJobs) {
+            if(!job.canceled)
+                writeln(job.id, "\t", job.runAt.toISOExtString(), "\t", job.cmd);
+        }
+    } else if(op == "atrm") {
+        if(tokens.length < 2) {
+            writeln("Usage: atrm jobid [jobid ...]");
+            return;
+        }
+        foreach(idStr; tokens[1 .. $]) {
+            auto jid = to!size_t(idStr);
+            foreach(ref job; atJobs)
+                if(job.id == jid) job.canceled = true;
+        }
     } else if(op == "alias") {
         if(tokens.length == 1 || (tokens.length == 2 && tokens[1] == "-p")) {
             foreach(name, val; aliases) {
