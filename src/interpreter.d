@@ -67,7 +67,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "for", "grep", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "for", "grep", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -662,6 +662,11 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
 
         foreach(name, _; environment.toAA) environment.remove(name);
         foreach(name, val; oldEnv) environment[name] = val;
+    } else if(op == "eval") {
+        if(tokens.length > 1) {
+            auto sub = tokens[1 .. $].join(" ");
+            run(sub);
+        }
     } else if(op == "awk") {
         if(tokens.length < 2) {
             writeln("awk program [file...]");
