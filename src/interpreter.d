@@ -19,6 +19,7 @@ import base64;
 import bc;
 import cal;
 import chkconfig;
+import cksum;
 
 string[] history;
 string[string] aliases;
@@ -915,6 +916,14 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
     } else if(op == "chkconfig") {
         chkconfigCommand(tokens);
+    } else if(op == "cksum") {
+        auto files = tokens[1 .. $];
+        if(files.length == 0) {
+            cksumStdin();
+        } else {
+            foreach(f; files)
+                cksumFile(f);
+        }
     } else if(op == "cal") {
         bool monday = false;
         bool yearFlag = false;
