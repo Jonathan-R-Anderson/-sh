@@ -346,6 +346,40 @@ Value quoteValue(Expr e) {
     return listVal(els);
 }
 
+bool isTruthy(Value v) {
+    if(v.kind == ValueKind.Number) return v.number != 0;
+    if(v.kind == ValueKind.Atom) return v.atom != "false";
+    return true;
+}
+
+bool valuesEqual(Value a, Value b) {
+    if(a.kind != b.kind) return false;
+    final switch(a.kind) {
+        case ValueKind.Number:
+            return a.number == b.number;
+        case ValueKind.Atom:
+            return a.atom == b.atom;
+        case ValueKind.Tuple:
+            if(a.tuple.length != b.tuple.length) return false;
+            foreach(i, av; a.tuple)
+                if(!valuesEqual(av, b.tuple[i])) return false;
+            return true;
+        case ValueKind.List:
+            if(a.list.length != b.list.length) return false;
+            foreach(i, av; a.list)
+                if(!valuesEqual(av, b.list[i])) return false;
+            return true;
+        case ValueKind.Map:
+            if(a.map.length != b.map.length) return false;
+            foreach(k, v; a.map) {
+                if(!(k in b.map)) return false;
+                if(!valuesEqual(v, b.map[k])) return false;
+            }
+            return true;
+    }
+    return false;
+}
+
 Value evalList(Expr e) {
     if(e.list.length == 0) return listVal([]);
     auto head = e.list[0].atom;
@@ -369,6 +403,26 @@ Value evalList(Expr e) {
         auto a = evalExpr(e.list[1]).number;
         auto b = evalExpr(e.list[2]).number;
         return atomVal(a > b ? "true" : "false");
+    } else if(head == "<") {
+        auto a = evalExpr(e.list[1]).number;
+        auto b = evalExpr(e.list[2]).number;
+        return atomVal(a < b ? "true" : "false");
+    } else if(head == "=:=") {
+        auto a = evalExpr(e.list[1]);
+        auto b = evalExpr(e.list[2]);
+        return atomVal(valuesEqual(a, b) ? "true" : "false");
+    } else if(head == "is_atom") {
+        auto v = evalExpr(e.list[1]);
+        return atomVal(v.kind == ValueKind.Atom ? "true" : "false");
+    } else if(head == "is_tuple") {
+        auto v = evalExpr(e.list[1]);
+        return atomVal(v.kind == ValueKind.Tuple ? "true" : "false");
+    } else if(head == "is_list") {
+        auto v = evalExpr(e.list[1]);
+        return atomVal(v.kind == ValueKind.List ? "true" : "false");
+    } else if(head == "is_number") {
+        auto v = evalExpr(e.list[1]);
+        return atomVal(v.kind == ValueKind.Number ? "true" : "false");
     } else if(head == "tuple") {
         Value[] els;
         foreach(arg; e.list[1 .. $]) els ~= evalExpr(arg);
@@ -387,6 +441,81 @@ Value evalList(Expr e) {
     } else if(head == "quote") {
         auto q = e.list[1];
         return quoteValue(q);
+    } else if(head == "if") {
+        auto condVal = evalExpr(e.list[1]);
+        if(isTruthy(condVal))
+            return evalExpr(e.list[2]);
+        else
+            return evalExpr(e.list[3]);
+    } else if(head == "cond") {
+        for(size_t i = 1; i < e.list.length; i++) {
+            auto clause = e.list[i];
+            if(clause.list.length < 2) continue;
+            auto test = clause.list[0];
+            auto body = clause.list[1];
+            if(test.isList && test.list.length > 0 && !test.list[0].isList && test.list[0].atom == "?=") {
+                auto pat = test.list[1];
+                Expr guard; bool hasGuard = false; Expr valExpr;
+                if(test.list.length == 4 && test.list[2].isList && test.list[2].list.length > 0 && !test.list[2].list[0].isList && test.list[2].list[0].atom == "when") {
+                    guard = test.list[2].list[1];
+                    hasGuard = true;
+                    valExpr = test.list[3];
+                } else if(test.list.length >= 3) {
+                    valExpr = test.list[2];
+                } else continue;
+                auto val = evalExpr(valExpr);
+                string[] varNames; Value[string] saved;
+                if(matchPattern(val, pat, varNames, saved)) {
+                    if(hasGuard && !isTruthy(evalExpr(guard))) {
+                        foreach(k,v; saved) variables[k] = v;
+                        foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                        continue;
+                    }
+                    auto res = evalExpr(body);
+                    foreach(k,v; saved) variables[k] = v;
+                    foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                    return res;
+                } else {
+                    foreach(k,v; saved) variables[k] = v;
+                    foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                }
+            } else {
+                auto val = evalExpr(test);
+                if(isTruthy(val)) return evalExpr(body);
+            }
+        }
+        return num(0);
+    } else if(head == "case") {
+        auto val = evalExpr(e.list[1]);
+        for(size_t i = 2; i < e.list.length; i++) {
+            auto clause = e.list[i];
+            if(clause.list.length < 2) continue;
+            auto pat = clause.list[0];
+            Expr guard; bool hasGuard = false; Expr body;
+            if(clause.list.length == 3 && clause.list[1].isList && clause.list[1].list.length > 0 && !clause.list[1].list[0].isList && clause.list[1].list[0].atom == "when") {
+                guard = clause.list[1].list[1];
+                hasGuard = true;
+                body = clause.list[2];
+            } else {
+                body = clause.list[1];
+            }
+            string[] varNames; Value[string] saved;
+            if(matchPattern(val, pat, varNames, saved)) {
+                if(hasGuard && !isTruthy(evalExpr(guard))) {
+                    foreach(k,v; saved) variables[k] = v;
+                    foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                    continue;
+                }
+                auto res = evalExpr(body);
+                foreach(k,v; saved) variables[k] = v;
+                foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                return res;
+            } else {
+                foreach(k,v; saved) variables[k] = v;
+                foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+            }
+        }
+        return num(0);
     } else if(head == "set") {
         auto name = e.list[1].atom;
         auto val = evalExpr(e.list[2]);
