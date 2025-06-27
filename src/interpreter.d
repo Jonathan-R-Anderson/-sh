@@ -49,6 +49,8 @@ import eject;
 import expand;
 import file;
 import fmt;
+import fold;
+import fsck;
 
 string[] history;
 string[string] aliases;
@@ -75,7 +77,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "grep", "fgrep", "file", "find", "fmt", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -629,6 +631,10 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         find.findCommand(tokens);
     } else if(op == "fmt") {
         fmt.fmtCommand(tokens);
+    } else if(op == "fold") {
+        fold.foldCommand(tokens);
+    } else if(op == "fsck") {
+        fsck.fsckCommand(tokens);
     } else if(op == "eject") {
         eject.ejectCommand(tokens);
     } else if(op == "env") {
