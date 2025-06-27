@@ -383,6 +383,11 @@ void runCommand(string cmd) {
         foreach(i, cmdLine; history) {
             writeln(i + 1, " ", cmdLine);
         }
+    } else if(op == "apt" || op == "apt-get") {
+        auto rc = system(cmd);
+        if(rc != 0) {
+            writeln(op, " failed with code ", rc);
+        }
     } else {
         // attempt to run external command
         auto rc = system(cmd);
