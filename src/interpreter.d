@@ -46,6 +46,7 @@ import dos2unix;
 import egrep;
 import eject;
 import expand;
+import file;
 
 string[] history;
 string[string] aliases;
@@ -72,7 +73,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "grep", "fgrep", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "grep", "fgrep", "file", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -620,6 +621,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         fgrep.fgrepCommand(tokens);
     } else if(op == "egrep") {
         egrep.egrepCommand(tokens);
+    } else if(op == "file") {
+        file.fileCommand(tokens);
     } else if(op == "eject") {
         eject.ejectCommand(tokens);
     } else if(op == "env") {
