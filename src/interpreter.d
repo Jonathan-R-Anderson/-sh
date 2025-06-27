@@ -7,7 +7,7 @@ import std.range;
 import std.file : chdir, getcwd, dirEntries, SpanMode, readText,
     copy, rename, remove, mkdir, rmdir, exists;
 import std.process : system, environment;
-version(Posix) import core.sys.posix.unistd : chroot;
+version(Posix) import core.sys.posix.unistd : chroot, execvp;
 import std.regex : regex, matchFirst;
 import std.path : globMatch;
 import std.conv : to;
@@ -67,7 +67,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "for", "grep", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "for", "grep", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -666,6 +666,26 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         if(tokens.length > 1) {
             auto sub = tokens[1 .. $].join(" ");
             run(sub);
+        }
+    } else if(op == "exec") {
+        if(tokens.length < 2) {
+            writeln("exec: missing command");
+            return;
+        }
+        version(Posix) {
+            import std.string : toStringz;
+            import core.stdc.stdlib : exit;
+            const(char)*[] args;
+            foreach(t; tokens[1 .. $]) args ~= t.toStringz;
+            args ~= null;
+            execvp(tokens[1].toStringz, args.ptr);
+            writeln("exec: failed to execute ", tokens[1]);
+            exit(127);
+        } else {
+            auto sub = tokens[1 .. $].join(" ");
+            auto rc = system(sub);
+            import core.stdc.stdlib : exit;
+            exit(rc);
         }
     } else if(op == "awk") {
         if(tokens.length < 2) {
