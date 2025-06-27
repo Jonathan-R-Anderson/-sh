@@ -203,3 +203,12 @@ Ping finished
 Pong finished
 ```
 
+
+#### Loop with Continue
+
+```lfe
+lfe> (c "tut25.lfe")
+#(module tut25)
+lfe> (tut25:demo)
+1245
+```
