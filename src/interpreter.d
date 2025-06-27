@@ -756,6 +756,16 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         auto rc = system("chattr " ~ args);
         if(rc != 0)
             writeln("chattr failed with code ", rc);
+    } else if(op == "chgrp") {
+        if(tokens.length < 3 &&
+           !(tokens.length >= 2 && tokens[1].startsWith("--reference="))) {
+            writeln("Usage: chgrp group file...");
+            return;
+        }
+        auto args = tokens[1 .. $].join(" ");
+        auto rc = system("chgrp " ~ args);
+        if(rc != 0)
+            writeln("chgrp failed with code ", rc);
     } else if(op == "cfdisk") {
         string optP;
         string device = "/dev/vda";
