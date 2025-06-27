@@ -4,6 +4,10 @@ import std.array;
 import std.algorithm;
 import std.parallelism;
 import std.range;
+import std.file : chdir, getcwd, dirEntries, SpanMode;
+import std.process : system;
+
+string[string] variables;
 
 /**
  * Simple interpreter skeleton for a Lisp-like language.
@@ -13,8 +17,18 @@ import std.range;
  */
 
 void runCommand(string cmd);
+void runParallel(string input);
 
 void run(string input) {
+    auto seqs = input.split(";");
+    foreach(s; seqs) {
+        auto trimmed = s.strip;
+        if(trimmed.length == 0) continue;
+        runParallel(trimmed);
+    }
+}
+
+void runParallel(string input) {
     auto cmds = input.split("&");
     if(cmds.length > 1) {
         foreach(c; cmds) {
@@ -29,17 +43,41 @@ void run(string input) {
 void runCommand(string cmd) {
     auto tokens = cmd.split();
     if(tokens.length == 0) return;
+
+    // variable expansion
+    foreach(ref t; tokens) {
+        if(t.length > 1 && t[0] == '$') {
+            auto key = t[1 .. $];
+            if(auto val = key in variables) t = *val;
+        }
+    }
+
+    // variable assignment of form name=value
+    auto eqPos = tokens[0].indexOf('=');
+    if(eqPos > 0 && tokens.length == 1) {
+        auto name = tokens[0][0 .. eqPos];
+        auto value = tokens[0][eqPos + 1 .. $];
+        variables[name] = value;
+        return;
+    }
+
     auto op = tokens[0];
     if(op == "echo") {
         writeln(tokens[1 .. $].join(" "));
-    } else if(op == "+" || op == "-") {
+    } else if(op == "+" || op == "-" || op == "*" || op == "/") {
         if(tokens.length < 3) {
             writeln("Invalid arithmetic expression");
             return;
         }
         int a = to!int(tokens[1]);
         int b = to!int(tokens[2]);
-        auto result = (op == "+") ? a + b : a - b;
+        int result;
+        final switch(op) {
+            case "+": result = a + b; break;
+            case "-": result = a - b; break;
+            case "*": result = a * b; break;
+            case "/": result = b == 0 ? 0 : a / b; break;
+        }
         writeln(result);
     } else if(op == "for") {
         if(tokens.length < 3) {
@@ -57,8 +95,25 @@ void runCommand(string cmd) {
         foreach(i; iota(start, finish + 1)) {
             runCommand(sub);
         }
+    } else if(op == "cd") {
+        if(tokens.length < 2) {
+            writeln("cd: missing operand");
+            return;
+        }
+        chdir(tokens[1]);
+    } else if(op == "pwd") {
+        writeln(getcwd());
+    } else if(op == "ls") {
+        string path = tokens.length > 1 ? tokens[1] : ".";
+        foreach(entry; dirEntries(path, SpanMode.shallow)) {
+            writeln(entry.name);
+        }
     } else {
-        writeln("Unknown command: ", op);
+        // attempt to run external command
+        auto rc = system(cmd);
+        if(rc != 0) {
+            writeln("Unknown command: ", op);
+        }
     }
 }
 
