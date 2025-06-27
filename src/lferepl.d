@@ -270,6 +270,7 @@ bool isNumber(string s) {
 
 Value evalExpr(Expr e);
 Value quoteValue(Expr e);
+Expr valueToExpr(Value v);
 
 immutable Rule[] rules = [
     Rule("HASHMAP", regex("#M\\(")),
@@ -414,6 +415,32 @@ Value quoteValue(Expr e) {
     }
     Value[] els; foreach(sub; e.list) els ~= quoteValue(sub);
     return listVal(els);
+}
+
+Expr valueToExpr(Value v) {
+    final switch(v.kind) {
+        case ValueKind.Number:
+            return Expr(false, to!string(v.number), null, false, false, false);
+        case ValueKind.Atom:
+            return Expr(false, v.atom, null, true, false, false);
+        case ValueKind.Tuple:
+            Expr[] tElems;
+            foreach(elem; v.tuple) tElems ~= valueToExpr(elem);
+            return Expr(true, "", tElems, false, true, false);
+        case ValueKind.List:
+            Expr[] lElems;
+            foreach(elem; v.list) lElems ~= valueToExpr(elem);
+            return Expr(true, "", lElems, false, false, false);
+        case ValueKind.Map:
+            Expr[] mElems;
+            foreach(k, val; v.map) {
+                auto keyExpr = parseString(k);
+                mElems ~= keyExpr;
+                mElems ~= valueToExpr(val);
+            }
+            return Expr(true, "", mElems, false, false, true);
+    }
+    return Expr(false, "", null, false, false, false);
 }
 
 bool isTruthy(Value v) {
@@ -604,6 +631,10 @@ Value evalList(Expr e) {
     } else if(head == "quote") {
         auto q = e.list[1];
         return quoteValue(q);
+    } else if(head == "eval") {
+        auto val = evalExpr(e.list[1]);
+        auto expr = valueToExpr(val);
+        return evalExpr(expr);
     } else if(head == "if") {
         auto condVal = evalExpr(e.list[1]);
         if(isTruthy(condVal))
