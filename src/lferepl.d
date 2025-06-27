@@ -16,9 +16,10 @@ struct Expr {
     Expr[] list;
     bool isAtom;
     bool isTuple;
+    bool isMap;
 }
 
-enum ValueKind { Number, Atom, Tuple, List }
+enum ValueKind { Number, Atom, Tuple, List, Map }
 
 struct Value {
     ValueKind kind;
@@ -26,12 +27,14 @@ struct Value {
     string atom;
     Value[] tuple;
     Value[] list;
+    Value[string] map;
 }
 
-Value num(double n) { return Value(ValueKind.Number, n, "", null, null); }
-Value atomVal(string a) { return Value(ValueKind.Atom, 0, a, null, null); }
-Value tupleVal(Value[] t) { return Value(ValueKind.Tuple, 0, "", t, null); }
-Value listVal(Value[] l) { return Value(ValueKind.List, 0, "", null, l); }
+Value num(double n) { return Value(ValueKind.Number, n, "", null, null, null); }
+Value atomVal(string a) { return Value(ValueKind.Atom, 0, a, null, null, null); }
+Value tupleVal(Value[] t) { return Value(ValueKind.Tuple, 0, "", t, null, null); }
+Value listVal(Value[] l) { return Value(ValueKind.List, 0, "", null, l, null); }
+Value mapVal(Value[string] m) { return Value(ValueKind.Map, 0, "", null, null, m); }
 
 string valueToString(Value v) {
     final switch(v.kind) {
@@ -53,6 +56,13 @@ string valueToString(Value v) {
             }
             if(ls.length > 0) ls = ls[0 .. $-1];
             return "(" ~ ls ~ ")";
+        case ValueKind.Map:
+            string ms;
+            foreach(k, val; v.map) {
+                ms ~= k ~ " " ~ valueToString(val) ~ " ";
+            }
+            if(ms.length > 0) ms = ms[0 .. $-1];
+            return "#M(" ~ ms ~ ")";
     }
     return "";
 }
@@ -66,8 +76,17 @@ class LfeParser : Parser {
         if (peek("QUOTE")) {
             consume("QUOTE");
             auto q = parseExpr();
-            Expr[] elems = [Expr(false, "quote", null, false, false), q];
-            return Expr(true, "", elems, false, false);
+            Expr[] elems = [Expr(false, "quote", null, false, false, false), q];
+            return Expr(true, "", elems, false, false, false);
+        } else if (peek("HASHMAP")) {
+            consume("HASHMAP");
+            Expr[] elems;
+            while (!peek("RPAREN")) {
+                elems ~= parseExpr();
+                if (pos >= tokens.length) break;
+            }
+            consume("RPAREN");
+            return Expr(true, "", elems, false, false, true);
         } else if (peek("HASHLPAREN")) {
             consume("HASHLPAREN");
             Expr[] elems;
@@ -76,7 +95,7 @@ class LfeParser : Parser {
                 if (pos >= tokens.length) break;
             }
             consume("RPAREN");
-            return Expr(true, "", elems, false, true);
+            return Expr(true, "", elems, false, true, false);
         } else if (peek("LPAREN") || peek("LBRACK")) {
             bool br = peek("LBRACK");
             if(br) consume("LBRACK"); else consume("LPAREN");
@@ -86,19 +105,19 @@ class LfeParser : Parser {
                 if (pos >= tokens.length) break;
             }
             if(br) consume("RBRACK"); else consume("RPAREN");
-            return Expr(true, "", elems, false, false);
+            return Expr(true, "", elems, false, false, false);
         } else if (peek("NUMBER")) {
             auto t = consume("NUMBER");
-            return Expr(false, t.value, null, false, false);
+            return Expr(false, t.value, null, false, false, false);
         } else if (peek("STRING")) {
             auto t = consume("STRING");
-            return Expr(false, t.value, null, false, false);
+            return Expr(false, t.value, null, false, false, false);
         } else if (peek("ATOM")) {
             auto t = consume("ATOM");
-            return Expr(false, t.value[1 .. $], null, true, false);
+            return Expr(false, t.value[1 .. $], null, true, false, false);
         } else if (peek("SYMBOL")) {
             auto t = consume("SYMBOL");
-            return Expr(false, t.value, null, false, false);
+            return Expr(false, t.value, null, false, false, false);
         }
         throw new Exception("Unexpected token");
     }
@@ -130,6 +149,7 @@ Value evalExpr(Expr e);
 Value quoteValue(Expr e);
 
 immutable Rule[] rules = [
+    Rule("HASHMAP", regex("#M\\(")),
     Rule("HASHLPAREN", regex("#\\(")),
     Rule("LPAREN", regex("\\(")),
     Rule("LBRACK", regex("\\[")),
@@ -179,6 +199,16 @@ bool matchPattern(Value val, Expr pat, ref string[] varNames, ref Value[string] 
         }
         return true;
     }
+    if(pat.isMap || (pat.isList && pat.list.length > 0 && !pat.list[0].isList && pat.list[0].atom == "map")) {
+        auto elems = pat.isMap ? pat.list : pat.list[1 .. $];
+        if(val.kind != ValueKind.Map) return false;
+        for(size_t i = 0; i + 1 < elems.length; i += 2) {
+            auto keyStr = valueToString(evalExpr(elems[i]));
+            if(!(keyStr in val.map)) return false;
+            if(!matchPattern(val.map[keyStr], elems[i+1], varNames, saved)) return false;
+        }
+        return true;
+    }
     if(pat.isList) {
         if(pat.list.length == 0) {
             return val.kind == ValueKind.List && val.list.length == 0;
@@ -211,6 +241,15 @@ Value quoteValue(Expr e) {
     if(e.isTuple) {
         Value[] elems; foreach(sub; e.list) elems ~= quoteValue(sub);
         return tupleVal(elems);
+    }
+    if(e.isMap) {
+        Value[string] m;
+        for(size_t i = 0; i + 1 < e.list.length; i += 2) {
+            auto k = quoteValue(e.list[i]);
+            auto v = quoteValue(e.list[i+1]);
+            m[valueToString(k)] = v;
+        }
+        return mapVal(m);
     }
     Value[] els; foreach(sub; e.list) els ~= quoteValue(sub);
     return listVal(els);
@@ -258,6 +297,35 @@ Value evalList(Expr e) {
         auto val = evalExpr(e.list[2]);
         variables[name] = val;
         return val;
+    } else if(head == "map") {
+        Value[string] m;
+        for(size_t i = 1; i + 1 < e.list.length; i += 2) {
+            auto k = evalExpr(e.list[i]);
+            auto v = evalExpr(e.list[i+1]);
+            m[valueToString(k)] = v;
+        }
+        return mapVal(m);
+    } else if(head == "map-update") {
+        auto base = evalExpr(e.list[1]);
+        Value[string] m = base.kind == ValueKind.Map ? base.map.dup : Value[string].init;
+        for(size_t i = 2; i + 1 < e.list.length; i += 2) {
+            auto k = evalExpr(e.list[i]);
+            auto v = evalExpr(e.list[i+1]);
+            m[valueToString(k)] = v;
+        }
+        return mapVal(m);
+    } else if(head == "proplists:get_value") {
+        auto key = evalExpr(e.list[1]);
+        auto plist = evalExpr(e.list[2]);
+        Value defval = e.list.length > 3 ? evalExpr(e.list[3]) : atomVal("undefined");
+        if(plist.kind != ValueKind.List) return defval;
+        auto kstr = valueToString(key);
+        foreach(item; plist.list) {
+            if(item.kind == ValueKind.Tuple && item.tuple.length >= 2) {
+                if(valueToString(item.tuple[0]) == kstr) return item.tuple[1];
+            }
+        }
+        return defval;
     } else if(head == "defun") {
         auto name = e.list[1].atom;
         FunctionClause[] clauses;
@@ -345,6 +413,15 @@ Value evalExpr(Expr e) {
         Value[] elems;
         foreach(sub; e.list) elems ~= evalExpr(sub);
         return tupleVal(elems);
+    }
+    if(e.isMap) {
+        Value[string] m;
+        for(size_t i = 0; i + 1 < e.list.length; i += 2) {
+            auto k = evalExpr(e.list[i]);
+            auto v = evalExpr(e.list[i+1]);
+            m[valueToString(k)] = v;
+        }
+        return mapVal(m);
     }
     return evalList(e);
 }
