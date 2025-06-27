@@ -7,6 +7,8 @@ import std.range;
 import std.file : chdir, getcwd, dirEntries, SpanMode, readText,
     copy, rename, remove, mkdir, rmdir;
 import std.process : system, environment;
+import std.regex : regex, matchFirst;
+import std.path : globMatch;
 
 string[] history;
 string[string] aliases;
@@ -312,9 +314,29 @@ void runCommand(string cmd) {
         }
     } else if(op == "apropos") {
         if(tokens.length < 2) {
-            writeln("Usage: apropos keyword");
+            writeln("Usage: apropos [-a] [-e|-r|-w] keyword [...]");
             return;
         }
+
+        bool useRegex = false;
+        bool useWildcard = false;
+        bool useExact = false;
+        bool requireAll = false;
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-")) {
+            auto t = tokens[idx];
+            if(t == "-r" || t == "--regex") useRegex = true;
+            else if(t == "-w" || t == "--wildcard") useWildcard = true;
+            else if(t == "-e" || t == "--exact") useExact = true;
+            else if(t == "-a" || t == "--and") requireAll = true;
+            idx++;
+        }
+        auto keywords = tokens[idx .. $];
+        if(keywords.length == 0) {
+            writeln("Usage: apropos [-a] [-e|-r|-w] keyword [...]");
+            return;
+        }
+
         string helpText;
         try {
             helpText = readText("commands.txt");
@@ -322,9 +344,32 @@ void runCommand(string cmd) {
             writeln("commands.txt not found");
             return;
         }
-        auto pattern = tokens[1].toLower;
+
         foreach(line; helpText.splitLines) {
-            if(line.toLower.canFind(pattern)) writeln(line);
+            bool matched = requireAll ? true : false;
+            foreach(kw; keywords) {
+                bool local = false;
+                auto lowerLine = line.toLower;
+                auto lowerKw = kw.toLower;
+                if(useRegex) {
+                    try {
+                        auto r = regex(lowerKw, "i");
+                        local = matchFirst(lowerLine, r) !is null;
+                    } catch(Exception) {
+                        continue;
+                    }
+                } else if(useWildcard) {
+                    local = globMatch(lowerLine, lowerKw);
+                } else if(useExact) {
+                    foreach(word; lowerLine.split()) {
+                        if(word == lowerKw) { local = true; break; }
+                    }
+                } else {
+                    local = lowerLine.canFind(lowerKw);
+                }
+                if(requireAll) matched &= local; else matched |= local;
+            }
+            if(matched) writeln(line);
         }
     } else if(op == "help") {
         string helpText;
