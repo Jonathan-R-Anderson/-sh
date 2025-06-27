@@ -86,6 +86,11 @@ lfe> (defun double (x) (* 2 x))
 0
 lfe> (double 21)
 42
+lfe> (defmacro unless (test body)
+      `(if (not ,test) ,body))
+0
+lfe> (unless (> 3 4) 'yes)
+yes
 lfe> (exit)
 ```
 
