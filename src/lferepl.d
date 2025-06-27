@@ -67,6 +67,37 @@ string valueToString(Value v) {
     return "";
 }
 
+string formatValue(Value v) {
+    final switch(v.kind) {
+        case ValueKind.Number:
+            return to!string(v.number);
+        case ValueKind.Atom:
+            return v.atom;
+        case ValueKind.Tuple:
+            string s;
+            foreach(elem; v.tuple) {
+                s ~= formatValue(elem) ~ " ";
+            }
+            if(s.length > 0) s = s[0 .. $-1];
+            return "#(" ~ s ~ ")";
+        case ValueKind.List:
+            string ls;
+            foreach(elem; v.list) {
+                ls ~= formatValue(elem) ~ " ";
+            }
+            if(ls.length > 0) ls = ls[0 .. $-1];
+            return "(" ~ ls ~ ")";
+        case ValueKind.Map:
+            string ms;
+            foreach(k, val; v.map) {
+                ms ~= k ~ " " ~ formatValue(val) ~ " ";
+            }
+            if(ms.length > 0) ms = ms[0 .. $-1];
+            return "#M(" ~ ms ~ ")";
+    }
+    return "";
+}
+
 class LfeParser : Parser {
     this(Token[] toks) {
         super(toks);
@@ -372,6 +403,34 @@ Value evalList(Expr e) {
             m[valueToString(k)] = v;
         }
         return mapVal(m);
+    } else if(head == "lfe_io:format") {
+        auto fmtExpr = e.list[1];
+        string fmt = fmtExpr.atom;
+        if(fmt.length >= 2 && fmt[0] == '"' && fmt[$-1] == '"')
+            fmt = fmt[1 .. $-1];
+        auto argsVal = evalExpr(e.list[2]);
+        if(argsVal.kind != ValueKind.List)
+            throw new Exception("badarg");
+        string out;
+        size_t ai = 0;
+        for(size_t i = 0; i < fmt.length; i++) {
+            if(fmt[i] == '~' && i + 1 < fmt.length) {
+                auto n = fmt[i+1];
+                if(n == 'w') {
+                    if(ai >= argsVal.list.length) throw new Exception("badarg");
+                    out ~= formatValue(argsVal.list[ai++]);
+                    i++;
+                    continue;
+                } else if(n == 'n') {
+                    out ~= "\n";
+                    i++;
+                    continue;
+                }
+            }
+            out ~= fmt[i];
+        }
+        write(out);
+        return atomVal("ok");
     } else if(head == "proplists:get_value") {
         auto key = evalExpr(e.list[1]);
         auto plist = evalExpr(e.list[2]);
