@@ -491,6 +491,18 @@ void runCommand(string cmd, bool skipAlias=false) {
                 }
             }
         }
+    } else if(op == "bzip2" || op == "bunzip2" || op == "bzcat" || op == "bzip2recover") {
+        auto args = tokens[1 .. $].join(" ");
+        string cmdLine;
+        if(op == "bunzip2")
+            cmdLine = "bzip2 -d " ~ args;
+        else if(op == "bzcat")
+            cmdLine = "bzip2 -dc " ~ args;
+        else
+            cmdLine = op ~ (args.length ? " " ~ args : "");
+        auto rc = system(cmdLine);
+        if(rc != 0)
+            writeln(op, " failed with code ", rc);
     } else if(op == "mkdir") {
         if(tokens.length < 2) {
             writeln("mkdir: missing operand");

@@ -35,6 +35,7 @@ The interpreter now supports a broader set of commands:
 - text display commands like `cat`, `head`, `tail`, and `grep`
 - `date` for the current time
 - schedule commands using `at`
+- compression utilities with `bzip2`
 
 Running the interpreter with no command argument starts an interactive shell.
 You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`). Type `exit` to leave the shell.
