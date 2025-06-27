@@ -40,6 +40,7 @@ The interpreter now supports a broader set of commands:
 - compression utilities with `bzip2`
 - `dd` to copy and convert data in blocks
 - `ddrescue` for data recovery from damaged disks
+- `df` to display free disk space
 - manage service runlevels with `chkconfig`
 - `caller` to display the current call stack frame
 
