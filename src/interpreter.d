@@ -51,11 +51,14 @@ import file;
 import fmt;
 import fold;
 import fsck;
+import awk;
+import fuser;
+import getopts;
 
 string[] history;
 string[string] aliases;
 
-string[string] variables;
+__gshared string[string] variables;
 string[string] keyBindings;
 
 string[string] colorCodes = [
@@ -77,7 +80,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -635,6 +638,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         fold.foldCommand(tokens);
     } else if(op == "fsck") {
         fsck.fsckCommand(tokens);
+    } else if(op == "fuser") {
+        fuser.fuserCommand(tokens);
     } else if(op == "eject") {
         eject.ejectCommand(tokens);
     } else if(op == "env") {
@@ -732,70 +737,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
     } else if(op == "expr") {
         exprCommand(tokens);
     } else if(op == "awk") {
-        if(tokens.length < 2) {
-            writeln("awk program [file...]");
-            return;
-        }
-
-        string fs = " ";
-        size_t idx = 1;
-        if(idx + 1 < tokens.length && tokens[idx] == "-F") {
-            fs = tokens[idx + 1];
-            idx += 2;
-        }
-        if(idx >= tokens.length) {
-            writeln("awk: missing program");
-            return;
-        }
-
-        auto program = tokens[idx];
-        idx++;
-        auto files = tokens[idx .. $];
-
-        if(program.length >= 2 &&
-           ((program[0] == '\'' && program[$-1] == '\'') ||
-            (program[0] == '"' && program[$-1] == '"')))
-            program = program[1 .. $-1];
-
-        import std.regex : regex, matchFirst;
-        auto re = regex(`^\s*(?:(.*?)\s+)?\{\s*print\s*(\$[0-9]+)?\s*\}\s*$`);
-        auto m = matchFirst(program, re);
-        if(m.empty) {
-            writeln("awk: unsupported program");
-            return;
-        }
-        string pattern = m.captures[1];
-        string fieldStr = m.captures[2];
-        int fieldIdx = 0;
-        if(fieldStr.length)
-            fieldIdx = to!int(fieldStr[1 .. $]);
-
-        string[] inputLines;
-        if(files.length == 0) {
-            string line;
-            while((line = readln()) !is null) {
-                inputLines ~= line.stripRight;
-            }
-        } else {
-            foreach(f; files) {
-                try {
-                    inputLines ~= readText(f).splitLines;
-                } catch(Exception e) {
-                    writeln("awk: cannot read ", f);
-                }
-            }
-        }
-
-        foreach(line; inputLines) {
-            auto l = line;
-            if(pattern.length == 0 || l.canFind(pattern)) {
-                auto fields = l.split(fs);
-                if(fieldIdx == 0)
-                    writeln(l);
-                else if(fieldIdx <= cast(int)fields.length)
-                    writeln(fields[fieldIdx - 1]);
-            }
-        }
+        awkCommand(tokens);
     } else if(op == "cut") {
         cutCommand(tokens);
     } else if(op == "basename") {
@@ -1585,7 +1527,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
                     variables[name] = value;
                 }
             }
-        }
+    } else if(op == "getopts") {
+        getopts.getoptsCommand(tokens);
     } else if(op == "unalias") {
         if(tokens.length == 2 && tokens[1] == "-a") {
             aliases.clear();
