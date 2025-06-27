@@ -29,6 +29,7 @@ The interpreter now supports a broader set of commands:
 - Haskell-style `for` loops, e.g. `for 1..3 echo hi`
 - concurrent commands using `&`, e.g. `echo one & echo two`
 - `bg` to run a command in the background or resume a stopped job
+- `fg` to bring a background job to the foreground
 - `jobs` to list background jobs
 - sequential commands separated by `;`
 - file utilities such as `cp`, `mv`, `rm`, `mkdir`, `rmdir`, `touch`, `chattr`, and `chown`
