@@ -16,6 +16,7 @@ import core.time : dur;
 import base32;
 import base64;
 import bc;
+import cal;
 
 string[] history;
 string[string] aliases;
@@ -572,6 +573,35 @@ void runCommand(string cmd, bool skipAlias=false) {
                 writeln("rm: cannot remove ", f);
             }
         }
+    } else if(op == "cal") {
+        bool monday = false;
+        bool yearFlag = false;
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-")) {
+            auto t = tokens[idx];
+            if(t == "-m") monday = true;
+            else if(t == "-s") monday = false;
+            else if(t == "-y") yearFlag = true;
+            idx++;
+        }
+
+        auto now = Clock.currTime();
+        int month = now.month;
+        int year = now.year;
+
+        int args = cast(int)tokens.length - cast(int)idx;
+        if(args == 1) {
+            year = to!int(tokens[idx]);
+            yearFlag = true;
+        } else if(args >= 2) {
+            month = to!int(tokens[idx]);
+            year = to!int(tokens[idx + 1]);
+        }
+
+        if(yearFlag)
+            printYear(year, monday);
+        else
+            printMonth(month, year, monday);
     } else if(op == "date") {
         import std.datetime : Clock;
         auto now = Clock.currTime();
