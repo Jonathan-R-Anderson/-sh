@@ -142,6 +142,7 @@ supported include:
 - macros using `defmacro` and `(macroexpand ...)`
 - modules defined by `defmodule`; source files can be loaded with `(c "file.lfe")`
 - basic I/O through `lfe_io:format` and utilities like `proplists:get_value`
+- file operations like `(cp source dest)`
 - concurrency primitives: `spawn`, `spawn_link`, `link`, `self`, message
   sending with `!`, `receive` and `process_flag` for `trap_exit`
 - `(exit)` to leave the REPL
