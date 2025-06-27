@@ -25,6 +25,7 @@ import comm;
 import cron;
 import crontab;
 import csplit;
+import cut;
 
 string[] history;
 string[string] aliases;
@@ -561,6 +562,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
                     writeln(fields[fieldIdx - 1]);
             }
         }
+    } else if(op == "cut") {
+        cutCommand(tokens);
     } else if(op == "basename") {
         if(tokens.length < 2) {
             writeln("basename: missing operand");
