@@ -15,6 +15,7 @@ import std.datetime : Clock, SysTime;
 import core.time : dur;
 import base32;
 import base64;
+import bc;
 
 string[] history;
 string[string] aliases;
@@ -129,6 +130,18 @@ void runCommand(string cmd) {
             case "/": result = b == 0 ? 0 : a / b; break;
         }
         writeln(result);
+    } else if(op == "bc") {
+        if(tokens.length < 2) {
+            writeln("Usage: bc expression");
+            return;
+        }
+        auto expr = tokens[1 .. $].join(" ");
+        try {
+            auto res = bcEval(expr);
+            writeln(res);
+        } catch(Exception e) {
+            writeln("bc: invalid expression");
+        }
     } else if(op == "for") {
         if(tokens.length < 3) {
             writeln("Usage: for start..end command");
