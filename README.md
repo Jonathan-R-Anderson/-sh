@@ -39,6 +39,7 @@ The interpreter now supports a broader set of commands:
  - manage cron tables with `crontab`
 - compression utilities with `bzip2`
 - `dd` to copy and convert data in blocks
+- `ddrescue` for data recovery from damaged disks
 - manage service runlevels with `chkconfig`
 - `caller` to display the current call stack frame
 

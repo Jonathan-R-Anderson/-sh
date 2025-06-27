@@ -19,6 +19,7 @@ import base64;
 import bc;
 import dc;
 import dd;
+import ddrescue;
 import cal;
 import chkconfig;
 import cksum;
@@ -260,6 +261,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
     } else if(op == "dd") {
         ddCommand(tokens);
+    } else if(op == "ddrescue") {
+        ddrescueCommand(tokens);
     } else if(op == "for") {
         if(tokens.length < 3) {
             writeln("Usage: for start..end command");
