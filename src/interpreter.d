@@ -17,6 +17,7 @@ import core.time : dur;
 import base32;
 import base64;
 import bc;
+import dc;
 import cal;
 import chkconfig;
 import cksum;
@@ -242,6 +243,19 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             writeln(res);
         } catch(Exception e) {
             writeln("bc: invalid expression");
+        }
+    } else if(op == "dc") {
+        if(tokens.length < 2) {
+            writeln("Usage: dc expression");
+            return;
+        }
+        auto expr = tokens[1 .. $].join(" ");
+        try {
+            auto res = dcEval(expr);
+            if(res.length > 0)
+                writeln(res);
+        } catch(Exception e) {
+            writeln("dc: invalid expression");
         }
     } else if(op == "for") {
         if(tokens.length < 3) {
