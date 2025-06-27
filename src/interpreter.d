@@ -67,7 +67,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "for", "grep", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "for", "grep", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -687,6 +687,17 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             import core.stdc.stdlib : exit;
             exit(rc);
         }
+    } else if(op == "exit") {
+        int code = 0;
+        if(tokens.length > 1) {
+            try {
+                code = to!int(tokens[1]);
+            } catch(Exception) {
+                // ignore invalid argument
+            }
+        }
+        import core.stdc.stdlib : exit;
+        exit(code);
     } else if(op == "awk") {
         if(tokens.length < 2) {
             writeln("awk program [file...]");
