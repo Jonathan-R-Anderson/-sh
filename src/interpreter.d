@@ -65,7 +65,7 @@ string[string] colorCodes = [
 
 string[] builtinNames = [
     "*", "+", "-", "/", "alias", "animal_case", "apropos", "apt", "apt-get",
-    "at", "atq", "atrm", "awk", "base32", "base64", "basename", "bc", "bg",
+    "at", "atq", "atrm", "awk", "base32", "base64", "basename", "bc", "bg", "fg",
     "bind", "break", "builtin", "bunzip2", "bzcat", "bzip2", "bzip2recover",
     "cal", "caller", "cat", "cd", "cfdisk", "chattr", "chgrp", "chkconfig",
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
@@ -1407,6 +1407,37 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             auto sub = tokens[1 .. $].join(" ");
             runBackground(sub);
         }
+    } else if(op == "fg") {
+        if(bgJobs.length == 0) {
+            writeln("fg: no current job");
+            return;
+        }
+        size_t idx;
+        bool found = false;
+        if(tokens.length == 1) {
+            idx = bgJobs.length - 1;
+            found = true;
+        } else if(tokens[1].startsWith("%")) {
+            auto id = to!size_t(tokens[1][1 .. $]);
+            foreach(i, ref job; bgJobs) {
+                if(job.id == id) {
+                    idx = i;
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if(!found) {
+            writeln("fg: " ~ tokens[1] ~ ": no such job");
+            return;
+        }
+        auto ref job = bgJobs[idx];
+        if(!job.running) {
+            job.running = true;
+            job.thread.start();
+        }
+        job.thread.join();
+        bgJobs = bgJobs.remove(idx);
     } else if(op == "at") {
         if(tokens.length < 3) {
             writeln("Usage: at seconds command");
