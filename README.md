@@ -91,3 +91,16 @@ lfe> (exit)
 
 The REPL exits when `(exit)` is evaluated.
 
+### Loading Modules
+
+Simple modules can be loaded with `(c "file.lfe")`. Functions defined in a
+`defmodule` form are stored using the `module:function` naming convention and can
+be invoked after the file is compiled:
+
+```lfe
+lfe> (c "tut1.lfe")
+#(module tut1)
+lfe> (tut1:double 21)
+42
+```
+
