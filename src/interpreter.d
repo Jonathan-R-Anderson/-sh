@@ -39,6 +39,7 @@ import csplit;
 import cut;
 import date;
 import dos2unix;
+import egrep;
 
 string[] history;
 string[string] aliases;
@@ -583,6 +584,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
                 writeln("grep: cannot read ", f);
             }
         }
+    } else if(op == "egrep") {
+        egrep.egrepCommand(tokens);
     } else if(op == "awk") {
         if(tokens.length < 2) {
             writeln("awk program [file...]");
