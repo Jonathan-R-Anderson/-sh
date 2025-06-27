@@ -20,12 +20,15 @@ Replace `<target>` with the appropriate triple for the operating system describe
 ./interpreter "+ 1 2"  # prints 3
 ```
 
-The interpreter currently supports a very small subset of commands:
+The interpreter now supports a broader set of commands:
 
 - `echo` – prints its arguments
-- basic arithmetic with `+` and `-`
+- basic arithmetic with `+`, `-`, `*`, and `/`
+- variable assignment and expansion using `name=value` and `$name`
+- directory commands like `cd`, `pwd`, and `ls`
 - Haskell-style `for` loops, e.g. `for 1..3 echo hi`
 - concurrent commands using `&`, e.g. `echo one & echo two`
+- sequential commands separated by `;`
 
-These features demonstrate how additional Bash commands could be layered on top of a Haskell-inspired syntax. The goal is to eventually cover the full Bash command set, including job control and other special operators.
+These examples demonstrate how additional Bash commands can be layered on top of a Haskell-inspired syntax. The goal remains to eventually cover the full Bash command set, including job control and other special operators.
 
