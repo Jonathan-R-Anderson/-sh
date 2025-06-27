@@ -792,6 +792,31 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         auto rc = system("chmod " ~ args);
         if(rc != 0)
             writeln("chmod failed with code ", rc);
+    } else if(op == "chroot") {
+        if(tokens.length >= 2 && tokens[1] == "--help") {
+            writeln("Usage: chroot NEWROOT [COMMAND [ARGS]...]");
+            writeln("Run COMMAND with root directory set to NEWROOT.");
+            return;
+        } else if(tokens.length >= 2 && tokens[1] == "--version") {
+            writeln("chroot (shell builtin) 0.1");
+            return;
+        } else if(tokens.length < 2) {
+            writeln("Usage: chroot NEWROOT [COMMAND [ARGS]...]");
+            return;
+        }
+
+        auto newroot = tokens[1];
+        string cmdLine;
+        if(tokens.length > 2) {
+            cmdLine = tokens[2 .. $].join(" ");
+        } else {
+            auto shellCmd = environment.get("SHELL", "/bin/sh");
+            cmdLine = shellCmd ~ " -i";
+        }
+
+        auto rc = system("chroot " ~ newroot ~ " " ~ cmdLine);
+        if(rc != 0)
+            writeln("chroot failed with code ", rc);
     } else if(op == "cfdisk") {
         string optP;
         string device = "/dev/vda";
