@@ -7,6 +7,9 @@ import std.range;
 import std.file : chdir, getcwd, dirEntries, SpanMode;
 import std.process : system, environment;
 
+string[] history;
+string[string] aliases;
+
 string[string] variables;
 string[string] colorCodes = [
     "black": "\033[30m",
@@ -51,8 +54,14 @@ void runParallel(string input) {
 }
 
 void runCommand(string cmd) {
+    history ~= cmd;
     auto tokens = cmd.split();
     if(tokens.length == 0) return;
+
+    if(auto ali = tokens[0] in aliases) {
+        auto aliTokens = (*ali).split();
+        tokens = aliTokens ~ tokens[1 .. $];
+    }
 
     // variable expansion
     foreach(ref t; tokens) {
@@ -118,6 +127,28 @@ void runCommand(string cmd) {
         foreach(entry; dirEntries(path, SpanMode.shallow)) {
             writeln(entry.name);
         }
+    } else if(op == "alias") {
+        if(tokens.length == 1) {
+            foreach(name, val; aliases) {
+                writeln(name, "=", val);
+            }
+        } else if(tokens.length == 2 && tokens[1].indexOf('=') > 0) {
+            auto eq = tokens[1].indexOf('=');
+            auto name = tokens[1][0 .. eq];
+            auto value = tokens[1][eq+1 .. $];
+            aliases[name] = value;
+        } else if(tokens.length >= 3) {
+            auto name = tokens[1];
+            auto value = tokens[2 .. $].join(" ");
+            aliases[name] = value;
+        } else if(tokens.length == 2) {
+            auto name = tokens[1];
+            if(auto val = name in aliases) writeln(name, "=", *val);
+        }
+    } else if(op == "history") {
+        foreach(i, cmdLine; history) {
+            writeln(i + 1, " ", cmdLine);
+        }
     } else {
         // attempt to run external command
         auto rc = system(cmd);
@@ -140,6 +171,10 @@ void repl() {
         line = line.strip;
         if(line == "exit") break;
         if(line.length == 0) continue;
+        if(line == "!!" && history.length) {
+            line = history[$-1];
+            writeln(line);
+        }
         run(line);
     }
 }
