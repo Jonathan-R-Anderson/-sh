@@ -59,6 +59,21 @@ string[string] colorCodes = [
     "white": "\033[37m"
 ];
 
+string[] builtinNames = [
+    "*", "+", "-", "/", "alias", "animal_case", "apropos", "apt", "apt-get",
+    "at", "atq", "atrm", "awk", "base32", "base64", "basename", "bc", "bg",
+    "bind", "break", "builtin", "bunzip2", "bzcat", "bzip2", "bzip2recover",
+    "cal", "caller", "cat", "cd", "cfdisk", "chattr", "chgrp", "chkconfig",
+    "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
+    "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue",
+    "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "for", "grep", "head",
+    "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
+    "rmdir", "tail", "touch", "unalias"
+];
+
+bool[string] builtinEnabled;
+
 struct AtJob {
     size_t id;
     string cmd;
@@ -175,6 +190,13 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
     }
 
     auto op = tokens[0];
+    if(auto en = op in builtinEnabled) {
+        if(!*en && op != "enable") {
+            auto rc = system(cmd);
+            if(rc != 0) writeln("Unknown command: ", op);
+            return;
+        }
+    }
     if(op == "command") {
         bool useDefaultPath = false;
         bool verbose = false;
@@ -1420,6 +1442,40 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         } else {
             writeln("bind: unsupported options");
         }
+    } else if(op == "enable") {
+        bool listAll = tokens.length == 1;
+        bool printStatus = false;
+        bool disable = false;
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-")) {
+            auto t = tokens[idx];
+            if(t == "-a") { printStatus = true; listAll = true; }
+            else if(t == "-p") { listAll = true; }
+            else if(t == "-n") { disable = true; }
+            else if(t == "-s" || t == "-d" || t == "-f") {
+                // unsupported options ignored
+            } else {
+                break;
+            }
+            idx++;
+        }
+        if(listAll && idx >= tokens.length) {
+            foreach(name; builtinNames) {
+                bool en = builtinEnabled.get(name, true);
+                if(printStatus)
+                    writeln((en ? "enable " : "enable -n ") ~ name);
+                else if(en)
+                    writeln(name);
+            }
+            return;
+        }
+        foreach(name; tokens[idx .. $]) {
+            if(name in builtinEnabled) {
+                builtinEnabled[name] = !disable;
+            } else {
+                writeln("enable: " ~ name ~ " not a shell builtin");
+            }
+        }
     } else if(op == "apropos") {
         if(tokens.length < 2) {
             writeln("Usage: apropos [-a] [-e|-r|-w] keyword [...]");
@@ -1537,6 +1593,7 @@ void repl() {
 
 void main(string[] args) {
     dirStack ~= getcwd();
+    foreach(name; builtinNames) builtinEnabled[name] = true;
     if(args.length < 2) {
         repl();
         return;
