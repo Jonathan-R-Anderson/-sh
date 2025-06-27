@@ -39,6 +39,14 @@ Value tupleVal(Value[] t) { return Value(ValueKind.Tuple, 0, "", t, null, null);
 Value listVal(Value[] l) { return Value(ValueKind.List, 0, "", null, l, null); }
 Value mapVal(Value[string] m) { return Value(ValueKind.Map, 0, "", null, null, m); }
 
+class ExitException : Exception {
+    Value reason;
+    this(Value r) {
+        super("exit");
+        this.reason = r;
+    }
+}
+
 string valueToString(Value v) {
     final switch(v.kind) {
         case ValueKind.Number:
@@ -173,6 +181,9 @@ class Process {
     Mutex m;
     Condition c;
     Value[] inbox;
+    string[] links;
+    bool trapExit = false;
+    bool alive = true;
     this() {
         m = new Mutex();
         c = new Condition(m);
@@ -182,6 +193,31 @@ class Process {
 Process[string] processes;
 Mutex procMutex;
 string currentPid;
+
+void sendExitSignal(string fromPid, string toPid, Value reason) {
+    Process proc;
+    synchronized(procMutex) {
+        if(!(toPid in processes)) return;
+        proc = processes[toPid];
+    }
+    synchronized(proc.m) {
+        proc.inbox ~= tupleVal([atomVal("EXIT"), atomVal(fromPid), reason]);
+        proc.c.notifyOne();
+    }
+    if(!proc.trapExit) proc.alive = false;
+}
+
+void propagateExit(string pid, Value reason) {
+    Process proc;
+    synchronized(procMutex) {
+        if(!(pid in processes)) return;
+        proc = processes[pid];
+    }
+    foreach(linkPid; proc.links) {
+        sendExitSignal(pid, linkPid, reason);
+    }
+    synchronized(procMutex) processes.remove(pid);
+}
 
 immutable string[] builtinModules = [
     "application", "application_controller", "application_master",
@@ -635,6 +671,7 @@ Value evalList(Expr e) {
             else proc = new Process();
         }
         for(;;) {
+            if(!proc.alive) throw new ExitException(atomVal("killed"));
             Value msg;
             synchronized(proc.m) {
                 while(proc.inbox.length == 0) proc.c.wait();
@@ -663,7 +700,21 @@ Value evalList(Expr e) {
         }
     } else if(head == "self") {
         return atomVal(currentPid);
-    } else if(head == "spawn") {
+    } else if(head == "link") {
+        auto pidVal = evalExpr(e.list[1]);
+        string pid = pidVal.kind == ValueKind.Atom ? pidVal.atom : valueToString(pidVal);
+        Process target; Process cur;
+        synchronized(procMutex) {
+            if(!(pid in processes)) return atomVal("undefined");
+            target = processes[pid];
+            if(currentPid in processes) cur = processes[currentPid];
+        }
+        synchronized(procMutex) {
+            cur.links ~= pid;
+            target.links ~= currentPid;
+        }
+        return atomVal("true");
+    } else if(head == "spawn" || head == "spawn_link") {
         auto modVal = evalExpr(e.list[1]);
         auto funVal = evalExpr(e.list[2]);
         auto argsVal = evalExpr(e.list[3]);
@@ -676,12 +727,40 @@ Value evalList(Expr e) {
         string pid = "<" ~ to!string(pidNum) ~ ">";
         auto proc = new Process();
         synchronized(procMutex) processes[pid] = proc;
+        if(head == "spawn_link") {
+            Process cur;
+            synchronized(procMutex) if(currentPid in processes) cur = processes[currentPid];
+            cur.links ~= pid;
+            proc.links ~= currentPid;
+        }
         taskPool.put(() {
             currentPid = pid;
-            callFunctionDirect(mod ~ ":" ~ fun, argVals);
-            synchronized(procMutex) processes.remove(pid);
+            Value reason = atomVal("normal");
+            try {
+                callFunctionDirect(mod ~ ":" ~ fun, argVals);
+            } catch(ExitException ex) {
+                reason = ex.reason;
+            } catch(Exception ex) {
+                reason = atomVal("error");
+            }
+            propagateExit(pid, reason);
         });
         return atomVal(pid);
+    } else if(head == "process_flag") {
+        auto flagVal = evalExpr(e.list[1]);
+        auto valueVal = evalExpr(e.list[2]);
+        if(flagVal.kind != ValueKind.Atom) throw new Exception("badarg");
+        Process proc;
+        synchronized(procMutex) {
+            if(currentPid in processes) proc = processes[currentPid];
+            else proc = new Process();
+        }
+        if(flagVal.atom == "trap_exit") {
+            bool old = proc.trapExit;
+            proc.trapExit = (valueVal.kind == ValueKind.Atom && valueVal.atom == "true");
+            return atomVal(old ? "true" : "false");
+        }
+        return atomVal("false");
     } else if(head == "lfe_io:format") {
         auto fmtExpr = e.list[1];
         string fmt = fmtExpr.atom;
@@ -795,8 +874,9 @@ Value evalList(Expr e) {
         loadFile(path);
         return num(0);
     } else if(head == "exit") {
-        // signal to caller
-        throw new Exception("__exit__");
+        Value reason = atomVal("normal");
+        if(e.list.length > 1) reason = evalExpr(e.list[1]);
+        throw new ExitException(reason);
     } else if(auto fn = head in functions) {
         auto clauses = *fn;
         auto args = e.list[1 .. $];
@@ -886,8 +966,9 @@ void repl() {
             ast = parser.parseExpr();
             auto result = evalExpr(ast);
             writeln(valueToString(result));
+        } catch(ExitException ex) {
+            break;
         } catch(Exception e) {
-            if(e.msg == "__exit__") break;
             writeln("Error: ", e.msg);
         }
     }
