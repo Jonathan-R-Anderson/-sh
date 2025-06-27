@@ -20,6 +20,7 @@ import dirname;
 import dir;
 import dircolors;
 import fgrep;
+import find;
 import bc;
 import dc;
 import expr;
@@ -73,7 +74,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "grep", "fgrep", "file", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "grep", "fgrep", "file", "find", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -623,6 +624,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         egrep.egrepCommand(tokens);
     } else if(op == "file") {
         file.fileCommand(tokens);
+    } else if(op == "find") {
+        find.findCommand(tokens);
     } else if(op == "eject") {
         eject.ejectCommand(tokens);
     } else if(op == "env") {
