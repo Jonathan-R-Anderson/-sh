@@ -40,6 +40,7 @@ import cut;
 import date;
 import dos2unix;
 import egrep;
+import eject;
 
 string[] history;
 string[string] aliases;
@@ -586,6 +587,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
     } else if(op == "egrep") {
         egrep.egrepCommand(tokens);
+    } else if(op == "eject") {
+        eject.ejectCommand(tokens);
     } else if(op == "awk") {
         if(tokens.length < 2) {
             writeln("awk program [file...]");
