@@ -299,15 +299,98 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             writeln(entry.name);
         }
     } else if(op == "cat") {
-        if(tokens.length < 2) {
-            writeln("cat: missing file operand");
-            return;
+        bool showEnds = false;
+        bool number = false;
+        bool numberNonBlank = false;
+        bool squeezeBlank = false;
+        bool showTabs = false;
+        bool showNonPrint = false;
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-")) {
+            auto t = tokens[idx];
+            final switch(t) {
+                case "-E": case "--show-ends": showEnds = true; break;
+                case "-n": case "--number": number = true; break;
+                case "-b": case "--number-nonblank": numberNonBlank = true; break;
+                case "-s": case "--squeeze-blank": squeezeBlank = true; break;
+                case "-T": case "--show-tabs": showTabs = true; break;
+                case "-v": case "--show-nonprinting": showNonPrint = true; break;
+                case "-A": case "--show-all": showEnds = true; showTabs = true; showNonPrint = true; break;
+                case "-e": showEnds = true; showNonPrint = true; break;
+                case "-t": showTabs = true; showNonPrint = true; break;
+                case "--help":
+                    writeln("Usage: cat [OPTIONS] [FILE]...");
+                    return;
+                case "--":
+                    idx++;
+                    goto filesStart;
+                default:
+                    if(t.length > 1)
+                        writeln("cat: invalid option ", t);
+                    else break;
+            }
+            idx++;
         }
-        foreach(f; tokens[1 .. $]) {
-            try {
-                writeln(readText(f));
-            } catch(Exception e) {
-                writeln("cat: cannot read ", f);
+        filesStart:
+        if(numberNonBlank) number = false;
+        auto files = tokens[idx .. $];
+        if(files.length == 0) files = ["-"];
+        size_t lineNum = 1;
+        bool prevBlank = false;
+
+        auto processLine = (ref string line) {
+            bool blank = line.length == 0;
+            if(showTabs) replace(line, "\t", "^I");
+            if(showNonPrint) {
+                string out;
+                foreach(dchar c; line) {
+                    if(c == '\t' || c == '\n') out ~= cast(char)c;
+                    else if(c < 32) out ~= "^" ~ cast(char)(c + 64);
+                    else if(c == 127) out ~= "^?";
+                    else if(c > 127) {
+                        auto code = c - 128;
+                        out ~= "M-";
+                        if(code < 32) out ~= "^" ~ cast(char)(code + 64);
+                        else if(code == 127) out ~= "^?";
+                        else out ~= cast(char)code;
+                    } else out ~= cast(char)c;
+                }
+                line = out;
+            }
+            if(showEnds) line ~= "$";
+            if(squeezeBlank) {
+                if(blank) {
+                    if(prevBlank) return;
+                    prevBlank = true;
+                } else {
+                    prevBlank = false;
+                }
+            }
+            if(numberNonBlank) {
+                if(blank) writeln(line); else { writefln("%6d\t%s", lineNum, line); lineNum++; }
+            } else if(number) {
+                writefln("%6d\t%s", lineNum, line); lineNum++;
+            } else {
+                writeln(line);
+            }
+        };
+
+        foreach(f; files) {
+            if(f == "-") {
+                string line;
+                while((line = readln()) !is null) {
+                    line = line.stripRight("\n");
+                    processLine(line);
+                }
+            } else {
+                try {
+                    foreach(line; readText(f).splitLines) {
+                        auto l = line;
+                        processLine(l);
+                    }
+                } catch(Exception) {
+                    writeln("cat: cannot read ", f);
+                }
             }
         }
     } else if(op == "head") {
@@ -440,6 +523,25 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
                 base = base[0 .. $ - suf.length];
         }
         writeln(base);
+    } else if(op == "animal_case") {
+        string animal;
+        if(tokens.length >= 2) {
+            animal = tokens[1];
+        } else {
+            write("Enter the name of an animal: ");
+            auto inp = readln();
+            if(inp is null) return;
+            animal = inp.strip;
+        }
+        string legs;
+        final switch(animal) {
+            case "horse": case "dog": case "cat": legs = "four"; break;
+            case "man": case "kangaroo": legs = "two"; break;
+            default:
+                writeln("The ", animal, " has an unknown number of legs.");
+                return;
+        }
+        writeln("The ", animal, " has ", legs, " legs.");
     } else if(op == "base64") {
         bool decode = false;
         bool ignore = false;
@@ -644,6 +746,90 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             } catch(Exception e) {
                 writeln("rm: cannot remove ", f);
             }
+        }
+    } else if(op == "cfdisk") {
+        string optP;
+        string device = "/dev/vda";
+        size_t idx = 1;
+        while(idx < tokens.length) {
+            auto t = tokens[idx];
+            if(t == "-P") {
+                idx++;
+                if(idx >= tokens.length) {
+                    writeln("cfdisk: option requires an argument -- P");
+                    return;
+                }
+                optP = tokens[idx];
+            } else if(t == "-h" || t == "--help") {
+                writeln("Usage: cfdisk [OPTIONS] [DEVICE]");
+                writeln("  -P [t|r]   Print the partition table in text (t) or raw (r) format");
+                writeln("  -h, --help Show this help message");
+                writeln("  -v         Print version information");
+                return;
+            } else if(t == "-v" || t == "--version") {
+                writeln("cfdisk (shell builtin) 0.1");
+                return;
+            } else if(t == "--") {
+                idx++;
+                break;
+            } else if(t.startsWith("-")) {
+                writeln("cfdisk: unknown option ", t);
+                return;
+            } else {
+                device = t;
+            }
+            idx++;
+        }
+        if(idx < tokens.length)
+            device = tokens[idx];
+        if(device.startsWith("/dev/"))
+            device = device[5 .. $];
+        string sys = "/sys/block/" ~ device;
+        import std.file : exists, dirEntries;
+        if(!exists(sys)) {
+            writeln("cfdisk: device /dev/" ~ device ~ " not found");
+            return;
+        }
+        long sectorSize = to!long(readText(sys ~ "/queue/hw_sector_size").strip);
+        long diskSectors = to!long(readText(sys ~ "/size").strip);
+        long diskMB = (diskSectors * sectorSize) / 1024 / 1024;
+
+        auto printTable = delegate() {
+            writefln("%-12s %-10s", "Device", "Size(MB)");
+            foreach(entry; dirEntries(sys, SpanMode.shallow)) {
+                auto base = entry.name.split("/").back;
+                if(!base.startsWith(device) || base == device) continue;
+                auto sizePath = entry.name ~ "/size";
+                if(!exists(sizePath)) continue;
+                long sz;
+                try { sz = to!long(readText(sizePath).strip); } catch(Exception) { continue; }
+                auto mb = (sz * sectorSize) / 1024 / 1024;
+                writefln("/dev/%-8s %10d", base, mb);
+            }
+        };
+
+        auto printRaw = delegate() {
+            writeln("Disk /dev/" ~ device ~ ": " ~ to!string(diskMB) ~ " MB");
+            foreach(entry; dirEntries(sys, SpanMode.shallow)) {
+                auto base = entry.name.split("/").back;
+                if(!base.startsWith(device) || base == device) continue;
+                auto sizePath = entry.name ~ "/size";
+                if(!exists(sizePath)) continue;
+                long sz;
+                try { sz = to!long(readText(sizePath).strip); } catch(Exception) { continue; }
+                writeln(base, " ", sz);
+            }
+        };
+
+        if(optP == "t") {
+            printTable();
+        } else if(optP == "r") {
+            printRaw();
+        } else if(optP.length == 0) {
+            writeln("Disk /dev/" ~ device ~ ": " ~ to!string(diskMB) ~ " MB");
+            printTable();
+        } else {
+            writeln("cfdisk: invalid -P option");
         }
     } else if(op == "cal") {
         bool monday = false;
