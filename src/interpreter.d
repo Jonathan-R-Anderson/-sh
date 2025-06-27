@@ -16,6 +16,9 @@ import std.datetime : Clock, SysTime;
 import core.time : dur;
 import base32;
 import base64;
+import dirname;
+import dir;
+import dircolors;
 import bc;
 import dc;
 import dd;
@@ -381,6 +384,10 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         foreach(entry; dirEntries(path, SpanMode.shallow)) {
             writeln(entry.name);
         }
+    } else if(op == "dir") {
+        dir.dirCommand(tokens);
+    } else if(op == "dircolors") {
+        dircolors.dircolorsCommand(tokens);
     } else if(op == "cat") {
         bool showEnds = false;
         bool number = false;
@@ -608,6 +615,17 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
                 base = base[0 .. $ - suf.length];
         }
         writeln(base);
+    } else if(op == "dirname") {
+        if(tokens.length < 2) {
+            writeln("dirname: missing operand");
+            return;
+        }
+        auto path = tokens[1];
+        auto dir = std.path.dirName(path);
+        if(dir.length == 0) dir = ".";
+        writeln(dir);
+    }
+    
     } else if(op == "animal_case") {
         string animal;
         if(tokens.length >= 2) {
