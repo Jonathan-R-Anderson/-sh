@@ -10,6 +10,8 @@ import std.algorithm;
 import std.conv : to;
 import std.file : readText;
 import std.parallelism;
+import core.sync.mutex : Mutex;
+import core.sync.condition : Condition;
 
 struct Expr {
     bool isList;
@@ -166,6 +168,20 @@ Value[string] variables;
 FunctionClause[][string] functions;
 string[][string] moduleFunctions;
 size_t pidCounter;
+
+class Process {
+    Mutex m;
+    Condition c;
+    Value[] inbox;
+    this() {
+        m = new Mutex();
+        c = new Condition(m);
+    }
+}
+
+Process[string] processes;
+Mutex procMutex;
+string currentPid;
 
 immutable string[] builtinModules = [
     "application", "application_controller", "application_master",
@@ -598,6 +614,55 @@ Value evalList(Expr e) {
             m[valueToString(k)] = v;
         }
         return mapVal(m);
+    } else if(head == "!") {
+        auto pidVal = evalExpr(e.list[1]);
+        auto msgVal = evalExpr(e.list[2]);
+        string pid = pidVal.kind == ValueKind.Atom ? pidVal.atom : valueToString(pidVal);
+        Process proc;
+        synchronized(procMutex) {
+            if(pid in processes) proc = processes[pid];
+            else return atomVal("undefined");
+        }
+        synchronized(proc.m) {
+            proc.inbox ~= msgVal;
+            proc.c.notifyOne();
+        }
+        return msgVal;
+    } else if(head == "receive") {
+        Process proc;
+        synchronized(procMutex) {
+            if(currentPid in processes) proc = processes[currentPid];
+            else proc = new Process();
+        }
+        for(;;) {
+            Value msg;
+            synchronized(proc.m) {
+                while(proc.inbox.length == 0) proc.c.wait();
+                msg = proc.inbox[0];
+                proc.inbox = proc.inbox[1 .. $];
+            }
+            foreach(clause; e.list[1 .. $]) {
+                if(clause.list.length < 2) continue;
+                auto pat = clause.list[0];
+                string[] varNames; Value[string] saved;
+                if(matchPattern(msg, pat, varNames, saved)) {
+                    Value result = num(0);
+                    for(size_t i = 1; i < clause.list.length; i++)
+                        result = evalExpr(clause.list[i]);
+                    foreach(k,v; saved) variables[k] = v;
+                    foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                    return result;
+                } else {
+                    foreach(k,v; saved) variables[k] = v;
+                    foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                }
+            }
+            synchronized(proc.m) {
+                proc.inbox ~= msg;
+            }
+        }
+    } else if(head == "self") {
+        return atomVal(currentPid);
     } else if(head == "spawn") {
         auto modVal = evalExpr(e.list[1]);
         auto funVal = evalExpr(e.list[2]);
@@ -607,11 +672,16 @@ Value evalList(Expr e) {
         string mod = modVal.atom;
         string fun = funVal.atom;
         auto argVals = argsVal.list.dup;
-        auto pid = pidCounter++;
+        auto pidNum = pidCounter++;
+        string pid = "<" ~ to!string(pidNum) ~ ">";
+        auto proc = new Process();
+        synchronized(procMutex) processes[pid] = proc;
         taskPool.put(() {
+            currentPid = pid;
             callFunctionDirect(mod ~ ":" ~ fun, argVals);
+            synchronized(procMutex) processes.remove(pid);
         });
-        return atomVal("<" ~ to!string(pid) ~ ">");
+        return atomVal(pid);
     } else if(head == "lfe_io:format") {
         auto fmtExpr = e.list[1];
         string fmt = fmtExpr.atom;
@@ -793,6 +863,7 @@ Value evalExpr(Expr e) {
 }
 
 void repl() {
+    currentPid = "<0>";
     writeln("LFE REPL -- type (exit) to quit");
     auto lex = new Lexer(rules);
     for(;;) {
