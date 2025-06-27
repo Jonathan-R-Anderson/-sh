@@ -36,6 +36,7 @@ The interpreter now supports a broader set of commands:
 - `date` for the current time
 - schedule commands using `at`
 - compression utilities with `bzip2`
+- manage service runlevels with `chkconfig`
 - `caller` to display the current call stack frame
 
 Running the interpreter with no command argument starts an interactive shell.
