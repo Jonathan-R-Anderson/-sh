@@ -34,8 +34,9 @@ The interpreter now supports a broader set of commands:
 - file utilities such as `cp`, `mv`, `rm`, `mkdir`, `rmdir`, `touch`, `chattr`, and `chown`
 - text display commands like `cat`, `head`, `tail`, and `grep`
 - `date` for the current time
-- schedule commands using `at`
-- run recurring scheduled jobs with `cron`
+ - schedule commands using `at`
+ - run recurring scheduled jobs with `cron`
+ - manage cron tables with `crontab`
 - compression utilities with `bzip2`
 - manage service runlevels with `chkconfig`
 - `caller` to display the current call stack frame
