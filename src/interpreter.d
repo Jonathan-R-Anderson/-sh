@@ -776,6 +776,12 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         auto rc = system("chown " ~ args);
         if(rc != 0)
             writeln("chown failed with code ", rc);
+    } else if(op == "chpasswd") {
+        auto args = tokens[1 .. $].join(" ");
+        auto cmdLine = "chpasswd" ~ (args.length ? " " ~ args : "");
+        auto rc = system(cmdLine);
+        if(rc != 0)
+            writeln("chpasswd failed with code ", rc);
     } else if(op == "chmod") {
         if(tokens.length < 3 &&
            !(tokens.length >= 2 && tokens[1].startsWith("--reference="))) {
