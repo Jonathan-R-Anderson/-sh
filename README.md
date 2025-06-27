@@ -41,8 +41,9 @@ Aliases may be managed with the `alias` builtin and removed using `unalias`.
 You can repeat the previous command by typing `!!`.
 You can view a list of common Linux commands with the built-in `help` command,
 which prints the contents of `commands.txt`.
-The new `apropos` command searches this help text for a keyword so you can
-quickly look up related commands.
+The `apropos` command searches this help text for matching commands. It now
+supports `-e` for exact matches, `-w` for shell wildcards, `-r` for regular
+expressions and `-a` to require all keywords.
 
 These examples demonstrate how additional Bash commands can be layered on top of a Haskell-inspired syntax. The goal remains to eventually cover the full Bash command set, including job control and other special operators.
 
