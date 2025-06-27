@@ -48,3 +48,18 @@ framework:
 ldc2 src/example.d src/dlexer.d src/dparser.d -of=example
 ./example "1 + 2 * 3"   # prints 7
 ```
+
+## Lisp Flavored Erlang Translator
+
+The program `src/lfe.d` demonstrates how the lexer can be repurposed to build a
+very small subset of [Lisp Flavored Erlang](https://lfe.io/). It parses a minimal
+Lisp syntax and emits Erlang source code.
+
+Build and run it with:
+
+```bash
+ldc2 src/lfe.d src/dlexer.d src/dparser.d -of=lfe
+./lfe "(defmodule sample (export (add 2)) (defun add (x y) (+ x y)))"
+```
+
+This will print the generated Erlang code for the given expression.
