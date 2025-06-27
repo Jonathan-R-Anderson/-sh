@@ -24,6 +24,7 @@ import cmp;
 import comm;
 import cron;
 import crontab;
+import csplit;
 
 string[] history;
 string[string] aliases;
@@ -1052,6 +1053,46 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         cronCommand(tokens);
     } else if(op == "crontab") {
         crontabCommand(tokens);
+    } else if(op == "csplit") {
+        string prefix = "xx";
+        int digits = 2;
+        bool quiet = false;
+        bool elide = false;
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-")) {
+            auto t = tokens[idx];
+            if(t == "-s" || t == "--silent" || t == "--quiet") {
+                quiet = true;
+            } else if(t == "-z" || t == "--elide-empty-files") {
+                elide = true;
+            } else if(t.startsWith("-f")) {
+                if(t.length > 2)
+                    prefix = t[2 .. $];
+                else if(idx + 1 < tokens.length) { prefix = tokens[idx+1]; idx++; }
+            } else if(t.startsWith("--prefix=")) {
+                prefix = t[9 .. $];
+            } else if(t.startsWith("-n")) {
+                if(t.length > 2)
+                    digits = to!int(t[2 .. $]);
+                else if(idx + 1 < tokens.length) { digits = to!int(tokens[idx+1]); idx++; }
+            } else if(t.startsWith("--digits=")) {
+                digits = to!int(t[9 .. $]);
+            } else if(t == "--") {
+                idx++;
+                break;
+            } else {
+                break;
+            }
+            idx++;
+        }
+        if(idx >= tokens.length) {
+            writeln("Usage: csplit [OPTION]... FILE PATTERN...");
+            return;
+        }
+        string file = tokens[idx];
+        idx++;
+        auto pats = tokens[idx .. $];
+        csplit.csplitFile(file, pats, prefix, digits, quiet, elide);
     } else if(op == "cal") {
         bool monday = false;
         bool yearFlag = false;
