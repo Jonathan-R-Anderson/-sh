@@ -92,6 +92,8 @@ struct CallFrame {
 
 CallFrame[] callStack;
 
+string[] dirStack;
+
 void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string callFile="");
 void runParallel(string input);
 
@@ -377,6 +379,50 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         } catch(Exception e) {
             writeln("cd: cannot access ", dest);
         }
+    } else if(op == "pushd") {
+        string cwd = getcwd();
+        string dest = tokens.length > 1 ? tokens[1] : environment.get("HOME", "");
+        if(dest.length == 0) dest = ".";
+        try {
+            chdir(dest);
+            auto newPath = getcwd();
+            dirStack = [newPath] ~ dirStack;
+            environment["OLDPWD"] = cwd;
+            environment["PWD"] = newPath;
+            foreach(i, d; dirStack) {
+                write(d);
+                if(i < dirStack.length - 1) write(" ");
+            }
+            writeln();
+        } catch(Exception e) {
+            writeln("pushd: cannot access ", dest);
+        }
+    } else if(op == "popd") {
+        if(dirStack.length <= 1) {
+            writeln("popd: directory stack empty");
+        } else {
+            string old = dirStack[0];
+            dirStack = dirStack[1 .. $];
+            string dest = dirStack[0];
+            try {
+                chdir(dest);
+                environment["OLDPWD"] = old;
+                environment["PWD"] = dest;
+                foreach(i, d; dirStack) {
+                    write(d);
+                    if(i < dirStack.length - 1) write(" ");
+                }
+                writeln();
+            } catch(Exception e) {
+                writeln("popd: cannot access ", dest);
+            }
+        }
+    } else if(op == "dirs") {
+        foreach(i, d; dirStack) {
+            write(d);
+            if(i < dirStack.length - 1) write(" ");
+        }
+        writeln();
     } else if(op == "pwd") {
         writeln(getcwd());
     } else if(op == "ls") {
@@ -1475,6 +1521,7 @@ void repl() {
 }
 
 void main(string[] args) {
+    dirStack ~= getcwd();
     if(args.length < 2) {
         repl();
         return;
