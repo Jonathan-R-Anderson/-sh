@@ -21,6 +21,7 @@ string[] history;
 string[string] aliases;
 
 string[string] variables;
+string[string] keyBindings;
 
 string[string] colorCodes = [
     "black": "\033[30m",
@@ -621,6 +622,42 @@ void runCommand(string cmd) {
         } else {
             writeln("unalias: usage: unalias [-a] name [name ...]");
         }
+    } else if(op == "bind") {
+        if(tokens.length == 1 || (tokens.length == 2 && (tokens[1] == "-p" || tokens[1] == "-P" || tokens[1] == "-X"))) {
+            foreach(key, val; keyBindings) {
+                writeln("bind -x ", key, ":", val);
+            }
+        } else if(tokens.length >= 3 && tokens[1] == "-x") {
+            foreach(arg; tokens[2 .. $]) {
+                auto pos = arg.indexOf(':');
+                if(pos <= 0) {
+                    writeln("bind: invalid binding '", arg, "'");
+                    continue;
+                }
+                auto key = arg[0 .. pos];
+                auto cmdStr = arg[pos+1 .. $];
+                keyBindings[key] = cmdStr;
+            }
+        } else if(tokens.length == 3 && tokens[1] == "-r") {
+            keyBindings.remove(tokens[2]);
+        } else if(tokens.length == 3 && tokens[1] == "-f") {
+            import std.file : readText;
+            try {
+                foreach(line; readText(tokens[2]).splitLines) {
+                    auto trimmed = line.strip;
+                    if(trimmed.length == 0 || trimmed[0] == '#') continue;
+                    auto pos = trimmed.indexOf(':');
+                    if(pos <= 0) continue;
+                    auto key = trimmed[0 .. pos];
+                    auto cmdStr = trimmed[pos+1 .. $];
+                    keyBindings[key] = cmdStr;
+                }
+            } catch(Exception e) {
+                writeln("bind: cannot read ", tokens[2]);
+            }
+        } else {
+            writeln("bind: unsupported options");
+        }
     } else if(op == "apropos") {
         if(tokens.length < 2) {
             writeln("Usage: apropos [-a] [-e|-r|-w] keyword [...]");
@@ -724,6 +761,10 @@ void repl() {
         line = line.strip;
         if(line == "exit") break;
         if(line.length == 0) continue;
+        if(auto b = line in keyBindings) {
+            run(*b);
+            continue;
+        }
         if(line == "!!" && history.length) {
             line = history[$-1];
             writeln(line);
