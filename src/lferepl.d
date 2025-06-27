@@ -9,6 +9,7 @@ import std.ascii : isDigit;
 import std.algorithm;
 import std.conv : to;
 import std.file : readText;
+import std.parallelism;
 
 struct Expr {
     bool isList;
@@ -164,6 +165,7 @@ struct FunctionClause {
 Value[string] variables;
 FunctionClause[][string] functions;
 string[][string] moduleFunctions;
+size_t pidCounter;
 
 immutable string[] builtinModules = [
     "application", "application_controller", "application_master",
@@ -380,6 +382,44 @@ bool valuesEqual(Value a, Value b) {
     return false;
 }
 
+Value callFunctionDirect(string name, Value[] argVals) {
+    if(auto fn = name in functions) {
+        auto clauses = *fn;
+        foreach(clause; clauses) {
+            if(clause.params.length != argVals.length) continue;
+            bool match = true;
+            string[] varNames;
+            Value[string] saved;
+            foreach(i, pexp; clause.params) {
+                auto val = argVals[i];
+                if(!matchPattern(val, pexp, varNames, saved)) { match = false; break; }
+            }
+            if(match) {
+                if(clause.hasGuard) {
+                    auto gval = evalExpr(clause.guard);
+                    bool pass = false;
+                    if(gval.kind == ValueKind.Number) pass = gval.number != 0;
+                    else if(gval.kind == ValueKind.Atom) pass = gval.atom != "false";
+                    else pass = true;
+                    if(!pass) {
+                        foreach(k,v; saved) variables[k] = v;
+                        foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                        continue;
+                    }
+                }
+                auto result = evalExpr(clause.body);
+                foreach(k,v; saved) variables[k] = v;
+                foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                return result;
+            } else {
+                foreach(k,v; saved) variables[k] = v;
+                foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+            }
+        }
+    }
+    return num(0);
+}
+
 Value evalList(Expr e) {
     if(e.list.length == 0) return listVal([]);
     auto head = e.list[0].atom;
@@ -558,6 +598,20 @@ Value evalList(Expr e) {
             m[valueToString(k)] = v;
         }
         return mapVal(m);
+    } else if(head == "spawn") {
+        auto modVal = evalExpr(e.list[1]);
+        auto funVal = evalExpr(e.list[2]);
+        auto argsVal = evalExpr(e.list[3]);
+        if(modVal.kind != ValueKind.Atom || funVal.kind != ValueKind.Atom || argsVal.kind != ValueKind.List)
+            throw new Exception("badarg");
+        string mod = modVal.atom;
+        string fun = funVal.atom;
+        auto argVals = argsVal.list.dup;
+        auto pid = pidCounter++;
+        taskPool.put(() {
+            callFunctionDirect(mod ~ ":" ~ fun, argVals);
+        });
+        return atomVal("<" ~ to!string(pid) ~ ">");
     } else if(head == "lfe_io:format") {
         auto fmtExpr = e.list[1];
         string fmt = fmtExpr.atom;
