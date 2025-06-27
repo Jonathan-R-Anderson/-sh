@@ -15,7 +15,7 @@ B
     base64    Base64 encode/decode data and print to standard output
     bash    GNU Bourne-Again SHell
     bc    Arbitrary precision calculator language
-    bg    Send to background
+    bg    Start or resume a background job
     bind    Set or display readline key and function bindings
     break    Exit from a loop
     builtin    Run a shell builtin

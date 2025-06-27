@@ -28,7 +28,8 @@ The interpreter now supports a broader set of commands:
 - directory commands like `cd`, `pwd`, and `ls`
 - Haskell-style `for` loops, e.g. `for 1..3 echo hi`
 - concurrent commands using `&`, e.g. `echo one & echo two`
-- `bg` to run a command in the background
+- `bg` to run a command in the background or resume a stopped job
+- `jobs` to list background jobs
 - sequential commands separated by `;`
 - file utilities such as `cp`, `mv`, `rm`, `mkdir`, `rmdir`, and `touch`
 - text display commands like `cat`, `head`, `tail`, and `grep`
