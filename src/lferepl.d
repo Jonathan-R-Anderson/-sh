@@ -8,6 +8,7 @@ import std.string;
 import std.ascii : isDigit;
 import std.algorithm;
 import std.conv : to;
+import std.utf;
 import std.file : readText, copy;
 import std.parallelism;
 import cpio : createArchive, extractArchive;
@@ -108,6 +109,68 @@ string formatValue(Value v) {
             return "#M(" ~ ms ~ ")";
     }
     return "";
+}
+
+string unescape(string s) {
+    string out;
+    for(size_t i = 0; i < s.length; i++) {
+        auto c = s[i];
+        if(c == '\\' && i + 1 < s.length) {
+            auto n = s[i+1];
+            switch(n) {
+                case 'a': out ~= "\a"; break;
+                case 'b': out ~= "\b"; break;
+                case 'c': return out; // suppress trailing newline
+                case 'e': case 'E': out ~= "\x1b"; break;
+                case 'f': out ~= "\f"; break;
+                case 'n': out ~= "\n"; break;
+                case 'r': out ~= "\r"; break;
+                case 't': out ~= "\t"; break;
+                case 'v': out ~= "\v"; break;
+                case '\\': out ~= "\\"; break;
+                case 'x': {
+                    string hx; size_t j = i + 2;
+                    while(j < s.length && hx.length < 2 &&
+                          ((s[j] >= '0' && s[j] <= '9') ||
+                           (s[j] >= 'a' && s[j] <= 'f') ||
+                           (s[j] >= 'A' && s[j] <= 'F'))) {
+                        hx ~= s[j]; j++; }
+                    if(hx.length) {
+                        out ~= cast(char)to!int("0x" ~ hx);
+                        i = j - 1;
+                    } else out ~= 'x';
+                    break; }
+                case '0': case '1': case '2': case '3': case '4':
+                case '5': case '6': case '7': {
+                    string oc; size_t j = i + 1;
+                    while(j < s.length && j < i + 4 &&
+                          s[j] >= '0' && s[j] <= '7') {
+                        oc ~= s[j]; j++; }
+                    out ~= cast(char)to!int(oc, 8);
+                    i = j - 1; break; }
+                case 'u': case 'U': {
+                    size_t maxLen = n == 'u' ? 4 : 8;
+                    string hx; size_t j = i + 2;
+                    while(j < s.length && hx.length < maxLen &&
+                          ((s[j] >= '0' && s[j] <= '9') ||
+                           (s[j] >= 'a' && s[j] <= 'f') ||
+                           (s[j] >= 'A' && s[j] <= 'F'))) {
+                        hx ~= s[j]; j++; }
+                    if(hx.length) {
+                        dchar val = cast(dchar)to!int("0x" ~ hx);
+                        out ~= std.utf.toUTF8(val);
+                        i = j - 1;
+                    } else out ~= n;
+                    break; }
+                default:
+                    out ~= n; break;
+            }
+            i++; // skip the escape code
+        } else {
+            out ~= c;
+        }
+    }
+    return out;
 }
 
 class LfeParser : Parser {
@@ -994,6 +1057,31 @@ Value evalList(Expr e) {
             }
             out ~= fmt[i];
         }
+        write(out);
+        return atomVal("ok");
+    } else if(head == "echo") {
+        bool newline = true;
+        bool interpret = false;
+        size_t idx = 1;
+        while(idx < e.list.length) {
+            auto optExpr = e.list[idx];
+            if(!optExpr.isList && !optExpr.isAtom && optExpr.atom.startsWith("-")) {
+                auto opt = optExpr.atom;
+                if(opt == "-n") newline = false;
+                else if(opt == "-e") interpret = true;
+                else if(opt == "-E") interpret = false;
+                else break;
+                idx++;
+            } else break;
+        }
+        string out;
+        for(size_t i = idx; i < e.list.length; i++) {
+            auto val = evalExpr(e.list[i]);
+            out ~= formatValue(val);
+            if(i + 1 < e.list.length) out ~= " ";
+        }
+        if(interpret) out = unescape(out);
+        if(newline) out ~= "\n";
         write(out);
         return atomVal("ok");
     } else if(head == "cp") {
