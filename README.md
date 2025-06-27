@@ -25,7 +25,7 @@ The interpreter now supports a broader set of commands:
 - `echo` – prints its arguments
 - basic arithmetic with `+`, `-`, `*`, and `/`
 - variable assignment and expansion using `name=value` and `$name`
-- directory commands like `cd`, `pwd`, and `ls`
+- directory commands like `cd`, `pwd`, `ls`, `pushd`, `popd`, and `dirs`
 - Haskell-style `for` loops, e.g. `for 1..3 echo hi`
 - concurrent commands using `&`, e.g. `echo one & echo two`
 - `bg` to run a command in the background or resume a stopped job
