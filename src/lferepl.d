@@ -130,6 +130,41 @@ struct FunctionClause {
 
 Value[string] variables;
 FunctionClause[][string] functions;
+string[][string] moduleFunctions;
+
+immutable string[] builtinModules = [
+    "application", "application_controller", "application_master",
+    "beam_lib", "binary", "c", "code", "code_server",
+    "edlin", "edlin_expand", "epp", "erl_distribution", "erl_eval",
+    "erl_parse", "erl_prim_loader", "erl_scan", "erlang", "error_handler",
+    "error_logger", "error_logger_tty_h", "erts_internal", "ets",
+    "file", "file_io_server", "file_server", "filename", "gb_sets",
+    "gb_trees", "gen", "gen_event", "gen_server", "global",
+    "global_group", "group", "heart", "hipe_unified_loader", "inet",
+    "inet_config", "inet_db", "inet_parse", "inet_udp", "init", "io",
+    "io_lib", "io_lib_format", "kernel", "kernel_config", "lfe_env",
+    "lfe_eval", "lfe_init", "lfe_io", "lfe_shell", "lists",
+    "net_kernel", "orddict", "os", "otp_ring0", "prim_eval",
+    "prim_file", "prim_inet", "prim_zip", "proc_lib", "proplists",
+    "ram_file", "rpc", "standard_error", "supervisor",
+    "supervisor_bridge", "sys", "unicode", "user_drv", "user_sup",
+    "zlib"
+];
+
+immutable string[][string] builtinModuleFunctions = [
+    "gb_trees" : [
+        "add/2", "add_element/2", "balance/1", "del_element/2",
+        "delete/2", "delete_any/2", "difference/2", "empty/0",
+        "filter/2", "fold/3", "from_list/1", "from_ordset/1",
+        "insert/2", "intersection/1", "intersection/2",
+        "is_disjoint/2", "is_element/2", "is_empty/1",
+        "is_member/2", "is_set/1", "is_subset/2", "iterator/1",
+        "largest/1", "module_info/0", "module_info/1", "new/0",
+        "next/1", "singleton/1", "size/1", "smallest/1",
+        "subtract/2", "take_largest/1", "take_smallest/1",
+        "to_list/1", "union/1", "union/2"
+    ]
+];
 
 bool isNumber(string s) {
     bool seenDot = false;
@@ -184,6 +219,29 @@ void loadFile(string path) {
         writeln("#(module ", modName, ")");
     } else {
         writeln("ok");
+    }
+}
+
+void showCompletions(string prefix) {
+    if(prefix.indexOf(":") == -1) {
+        string[] mods;
+        foreach(m; builtinModules) if(m.startsWith(prefix)) mods ~= m;
+        foreach(m; moduleFunctions.keys) if(m.startsWith(prefix)) mods ~= m;
+        mods.sort;
+        foreach(m; mods) write(m ~ "    ");
+        writeln();
+    } else {
+        auto parts = prefix.split(":");
+        auto mod = parts[0];
+        auto funPref = parts.length > 1 ? parts[1] : "";
+        string[] funcs;
+        if(auto arr = mod in builtinModuleFunctions)
+            foreach(f; *arr) if(f.startsWith(funPref)) funcs ~= f;
+        if(auto arr2 = mod in moduleFunctions)
+            foreach(f; *arr2) if(f.startsWith(funPref)) funcs ~= f;
+        funcs.sort;
+        foreach(f; funcs) write(f ~ "    ");
+        writeln();
     }
 }
 
@@ -341,6 +399,9 @@ Value evalList(Expr e) {
             clauses ~= FunctionClause(params, body);
         }
         functions[name] = clauses;
+        string entry = name ~ "/" ~ to!string(clauses[0].params.length);
+        if(!("global" in moduleFunctions)) moduleFunctions["global"] = [];
+        if(entry !in moduleFunctions["global"]) moduleFunctions["global"] ~= entry;
         return num(0);
     } else if(head == "defmodule") {
         auto modName = e.list[1].atom;
@@ -360,6 +421,9 @@ Value evalList(Expr e) {
                     clauses ~= FunctionClause(params, body);
                 }
                 functions[modName ~ ":" ~ fname] = clauses;
+                string entry = fname ~ "/" ~ to!string(clauses[0].params.length);
+                if(!(modName in moduleFunctions)) moduleFunctions[modName] = [];
+                if(entry !in moduleFunctions[modName]) moduleFunctions[modName] ~= entry;
             }
         }
         return num(0);
@@ -435,6 +499,12 @@ void repl() {
         if(line is null) break;
         line = line.strip;
         if(line.length == 0) continue;
+        auto tabPos = line.indexOf('\t');
+        if(tabPos >= 0) {
+            auto prefix = line[0 .. tabPos];
+            showCompletions(prefix);
+            continue;
+        }
         auto toks = lex.tokenize(line);
         toks = toks.filter!(t => t.type != "WS").array;
         auto parser = new LfeParser(toks);
