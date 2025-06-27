@@ -10,6 +10,7 @@ import std.algorithm;
 import std.conv : to;
 import std.file : readText, copy;
 import std.parallelism;
+import cpio : createArchive, extractArchive;
 import core.sync.mutex : Mutex;
 import core.sync.condition : Condition;
 
@@ -1011,6 +1012,28 @@ Value evalList(Expr e) {
             writeln("cp: failed to copy ", src, " to ", dst);
             return atomVal("error");
         }
+    } else if(head == "cpio-create") {
+        if(e.list.length < 3) return atomVal("error");
+        auto archVal = evalExpr(e.list[1]);
+        string arch = valueToString(archVal);
+        if(arch.length >= 2 && arch[0] == '"' && arch[$-1] == '"')
+            arch = arch[1 .. $-1];
+        string[] files;
+        foreach(expr; e.list[2 .. $]) {
+            string p = valueToString(evalExpr(expr));
+            if(p.length >= 2 && p[0] == '"' && p[$-1] == '"')
+                p = p[1 .. $-1];
+            files ~= p;
+        }
+        createArchive(arch, files);
+        return atomVal("ok");
+    } else if(head == "cpio-extract") {
+        auto archVal = evalExpr(e.list[1]);
+        string arch = valueToString(archVal);
+        if(arch.length >= 2 && arch[0] == '"' && arch[$-1] == '"')
+            arch = arch[1 .. $-1];
+        extractArchive(arch);
+        return atomVal("ok");
     } else if(head == "proplists:get_value") {
         auto key = evalExpr(e.list[1]);
         auto plist = evalExpr(e.list[2]);
