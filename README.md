@@ -44,6 +44,8 @@ The interpreter now supports a broader set of commands:
 - `fdformat` to low-level format a floppy disk
 - `df` to display free disk space
 - `dmesg` to print kernel messages
+- `fold` to wrap text to a fixed width
+- `fsck` to check and repair filesystems
 - `eject` to eject removable media
 - manage service runlevels with `chkconfig`
 - `caller` to display the current call stack frame
