@@ -25,6 +25,7 @@ import cal;
 import chkconfig;
 import cksum;
 import cmp;
+import diff;
 import comm;
 import cron;
 import crontab;
@@ -1036,6 +1037,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         string file2 = (idx + 1 < tokens.length) ? tokens[idx + 1] : "-";
 
         cmp.cmpFiles(file1, file2, ignore, optC, optL, optSilent);
+    } else if(op == "diff") {
+        diff.diffCommand(tokens);
     } else if(op == "comm") {
         bool s1 = false;
         bool s2 = false;
