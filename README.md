@@ -36,6 +36,7 @@ The interpreter now supports a broader set of commands:
 - `date` for the current time
 - schedule commands using `at`
 - compression utilities with `bzip2`
+- `caller` to display the current call stack frame
 
 Running the interpreter with no command argument starts an interactive shell.
 You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`). Type `exit` to leave the shell.

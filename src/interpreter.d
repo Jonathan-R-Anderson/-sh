@@ -65,7 +65,15 @@ int breakCount;
  * with the D cross-compiler.
  */
 
-void runCommand(string cmd, bool skipAlias=false);
+struct CallFrame {
+    size_t line;
+    string file;
+    string cmd;
+}
+
+CallFrame[] callStack;
+
+void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string callFile="");
 void runParallel(string input);
 
 void run(string input) {
@@ -81,11 +89,11 @@ void runParallel(string input) {
     auto cmds = input.split("&");
     if(cmds.length > 1) {
         foreach(c; cmds) {
-            taskPool.put(() { runCommand(c.strip); });
+            taskPool.put(() { runCommand(c.strip, false, __LINE__, __FILE__); });
         }
         taskPool.finish();
     } else {
-        runCommand(input.strip);
+        runCommand(input.strip, false, __LINE__, __FILE__);
     }
 }
 
@@ -102,7 +110,10 @@ void runBackground(string cmd) {
     writeln("[", id, "] ", cmd, " &");
 }
 
-void runCommand(string cmd, bool skipAlias=false) {
+void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string callFile="") {
+    callStack ~= CallFrame(callLine, callFile, cmd);
+    scope(exit) callStack.popBack();
+
     history ~= cmd;
     auto tokens = cmd.split();
     if(tokens.length == 0) return;
@@ -144,7 +155,7 @@ void runCommand(string cmd, bool skipAlias=false) {
             return;
         }
         auto subCmd = tokens[1 .. $].join(" ");
-        runCommand(subCmd, true);
+        runCommand(subCmd, true, __LINE__, __FILE__);
     } else if(op == "echo") {
         writeln(tokens[1 .. $].join(" "));
     } else if(op == "+" || op == "-" || op == "*" || op == "/") {
@@ -190,7 +201,7 @@ void runCommand(string cmd, bool skipAlias=false) {
         loopDepth++;
         foreach(i; iota(start, finish + 1)) {
             if(breakCount > 0) { breakCount--; break; }
-            runCommand(sub);
+            runCommand(sub, false, __LINE__, __FILE__);
             if(breakCount > 0) { breakCount--; break; }
         }
         if(loopDepth > 0) loopDepth--;
@@ -602,6 +613,25 @@ void runCommand(string cmd, bool skipAlias=false) {
             printYear(year, monday);
         else
             printMonth(month, year, monday);
+    } else if(op == "caller") {
+        size_t level = 0;
+        if(tokens.length > 1) {
+            try {
+                level = to!size_t(tokens[1]);
+            } catch(Exception) {
+                writeln("caller: invalid level");
+                return;
+            }
+        }
+        if(level >= callStack.length - 1) {
+            // no output if level outside stack
+        } else {
+            auto frame = callStack[$ - 2 - level];
+            if(frame.cmd.length)
+                writeln(frame.line, " ", frame.cmd, " ", frame.file);
+            else
+                writeln(frame.line, " ", frame.file);
+        }
     } else if(op == "date") {
         import std.datetime : Clock;
         auto now = Clock.currTime();
