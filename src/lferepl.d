@@ -175,6 +175,7 @@ struct FunctionClause {
 Value[string] variables;
 FunctionClause[][string] functions;
 string[][string] moduleFunctions;
+string[][string] recordDefs;
 size_t pidCounter;
 
 class Process {
@@ -336,6 +337,21 @@ bool matchPattern(Value val, Expr pat, ref string[] varNames, ref Value[string] 
     if(pat.isAtom) {
         return val.kind == ValueKind.Atom && val.atom == pat.atom;
     }
+    if(pat.isList && pat.list.length > 0 && !pat.list[0].isList && pat.list[0].atom.startsWith("match-")) {
+        auto recName = pat.list[0].atom[6 .. $];
+        if(auto fieldsPtr = recName in recordDefs) {
+            auto fields = *fieldsPtr;
+            if(val.kind != ValueKind.Tuple || val.tuple.length < fields.length + 1) return false;
+            if(val.tuple[0].kind != ValueKind.Atom || val.tuple[0].atom != recName) return false;
+            for(size_t i = 1; i + 1 < pat.list.length; i += 2) {
+                auto fname = pat.list[i].atom;
+                size_t idx = fields.countUntil(fname);
+                if(idx >= fields.length) return false;
+                if(!matchPattern(val.tuple[idx+1], pat.list[i+1], varNames, saved)) return false;
+            }
+            return true;
+        }
+    }
     if(pat.isTuple || (pat.isList && pat.list.length > 0 && !pat.list[0].isList && pat.list[0].atom == "tuple")) {
         auto elems = pat.isTuple ? pat.list : pat.list[1 .. $];
         if(val.kind != ValueKind.Tuple || val.tuple.length != elems.length) return false;
@@ -432,6 +448,61 @@ bool valuesEqual(Value a, Value b) {
             return true;
     }
     return false;
+}
+
+Value handleRecordCall(string head, Expr e, ref bool handled) {
+    foreach(recordName, fields; recordDefs) {
+        auto makeName = "make-" ~ recordName;
+        if(head == makeName) {
+            Value[string] vals;
+            for(size_t i = 1; i + 1 < e.list.length; i += 2) {
+                auto fname = e.list[i].atom;
+                vals[fname] = evalExpr(e.list[i+1]);
+            }
+            Value[] tup = [ atomVal(recordName) ];
+            foreach(f; fields) {
+                if(auto v = f in vals) tup ~= *v; else tup ~= atomVal("undefined");
+            }
+            handled = true;
+            return tupleVal(tup);
+        }
+        auto setPrefix = "set-" ~ recordName ~ "-";
+        if(head.startsWith(setPrefix)) {
+            auto field = head[setPrefix.length .. $];
+            size_t idx = fields.countUntil(field);
+            if(idx < fields.length) {
+                auto rec = evalExpr(e.list[1]);
+                auto val = evalExpr(e.list[2]);
+                Value[] tup;
+                if(rec.kind == ValueKind.Tuple) tup = rec.tuple.dup; else {
+                    tup = [atomVal(recordName)];
+                    foreach(i; 0 .. fields.length) tup ~= atomVal("undefined");
+                }
+                if(tup.length != fields.length + 1) {
+                    tup.length = fields.length + 1;
+                    foreach(i; 0 .. fields.length) if(i+1 >= tup.length) tup ~= atomVal("undefined");
+                }
+                tup[0] = atomVal(recordName);
+                tup[idx+1] = val;
+                handled = true;
+                return tupleVal(tup);
+            }
+        }
+        auto getPrefix = recordName ~ "-";
+        if(head.startsWith(getPrefix)) {
+            auto field = head[getPrefix.length .. $];
+            size_t idx = fields.countUntil(field);
+            if(idx < fields.length) {
+                auto rec = evalExpr(e.list[1]);
+                if(rec.kind != ValueKind.Tuple || rec.tuple.length <= idx+1)
+                    return atomVal("undefined");
+                handled = true;
+                return rec.tuple[idx+1];
+            }
+        }
+    }
+    handled = false;
+    return num(0);
 }
 
 Value callFunctionDirect(string name, Value[] argVals) {
@@ -801,6 +872,12 @@ Value evalList(Expr e) {
             }
         }
         return defval;
+    } else if(head == "defrecord") {
+        auto rname = e.list[1].atom;
+        string[] fields;
+        foreach(f; e.list[2 .. $]) fields ~= f.atom;
+        recordDefs[rname] = fields;
+        return num(0);
     } else if(head == "defun") {
         auto name = e.list[1].atom;
         FunctionClause[] clauses;
@@ -877,41 +954,47 @@ Value evalList(Expr e) {
         Value reason = atomVal("normal");
         if(e.list.length > 1) reason = evalExpr(e.list[1]);
         throw new ExitException(reason);
-    } else if(auto fn = head in functions) {
-        auto clauses = *fn;
-        auto args = e.list[1 .. $];
-        foreach(clause; clauses) {
-            if(clause.params.length != args.length) continue;
-            bool match = true;
-            string[] varNames;
-            Value[string] saved;
-            Value[] argVals;
-            foreach(a; args) argVals ~= evalExpr(a);
-            foreach(i, pexp; clause.params) {
-                auto val = argVals[i];
-                if(!matchPattern(val, pexp, varNames, saved)) { match = false; break; }
-            }
-            if(match) {
-                if(clause.hasGuard) {
-                    auto gval = evalExpr(clause.guard);
-                    bool pass = false;
-                    if(gval.kind == ValueKind.Number) pass = gval.number != 0;
-                    else if(gval.kind == ValueKind.Atom) pass = gval.atom != "false";
-                    else pass = true;
-                    if(!pass) {
-                        foreach(k,v; saved) variables[k] = v;
-                        foreach(n; varNames) if(!(n in saved)) variables.remove(n);
-                        continue;
-                    }
+    } else {
+        bool recHandled = false;
+        auto res = handleRecordCall(head, e, recHandled);
+        if(recHandled) return res;
+        if(auto fn = head in functions) {
+            auto clauses = *fn;
+            auto args = e.list[1 .. $];
+            foreach(clause; clauses) {
+                if(clause.params.length != args.length) continue;
+                bool match = true;
+                string[] varNames;
+                Value[string] saved;
+                Value[] argVals;
+                foreach(a; args) argVals ~= evalExpr(a);
+                foreach(i, pexp; clause.params) {
+                    auto val = argVals[i];
+                    if(!matchPattern(val, pexp, varNames, saved)) { match = false; break; }
                 }
-                auto result = evalExpr(clause.body);
-                foreach(k,v; saved) variables[k] = v;
-                foreach(n; varNames) if(!(n in saved)) variables.remove(n);
-                return result;
-            } else {
-                foreach(k,v; saved) variables[k] = v;
-                foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                if(match) {
+                    if(clause.hasGuard) {
+                        auto gval = evalExpr(clause.guard);
+                        bool pass = false;
+                        if(gval.kind == ValueKind.Number) pass = gval.number != 0;
+                        else if(gval.kind == ValueKind.Atom) pass = gval.atom != "false";
+                        else pass = true;
+                        if(!pass) {
+                            foreach(k,v; saved) variables[k] = v;
+                            foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                            continue;
+                        }
+                    }
+                    auto result = evalExpr(clause.body);
+                    foreach(k,v; saved) variables[k] = v;
+                    foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                    return result;
+                } else {
+                    foreach(k,v; saved) variables[k] = v;
+                    foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                }
             }
+            return num(0);
         }
         return num(0);
     }
