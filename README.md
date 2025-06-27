@@ -109,3 +109,78 @@ lfe> (tut1:double 21)
 42
 ```
 
+### Language Features
+
+The REPL implements a small but growing subset of LFE. Features currently
+supported include:
+
+- numeric, atom, tuple, list and map values with constructors and `map-update`
+- quoting forms with `quote`, `backquote`, `comma` and `comma-at`
+- variable binding using `(set ...)` and `(let ...)`
+- pattern matching with `case`, `cond` and multi-clause `defun`
+- guard expressions on function clauses
+- record definitions via `defrecord` with generated accessors and setters
+- macros using `defmacro` and `(macroexpand ...)`
+- modules defined by `defmodule`; source files can be loaded with `(c "file.lfe")`
+- basic I/O through `lfe_io:format` and utilities like `proplists:get_value`
+- concurrency primitives: `spawn`, `spawn_link`, `link`, `self`, message
+  sending with `!`, `receive` and `process_flag` for `trap_exit`
+- `(exit)` to leave the REPL
+
+### Example Programs
+
+Below are small samples demonstrating the syntax supported in the REPL.
+
+#### Quoting and Unquoting
+
+```lfe
+lfe> '(1 2 3)
+(1 2 3)
+lfe> `(a ,(+ 1 1) c)
+(a 2 c)
+```
+
+#### Variables and Pattern Matching
+
+```lfe
+lfe> (set greeting "hi")
+"hi"
+lfe> (let ((list (tuple 1 2 3)))
+       (case list
+         ((tuple 1 x y) (+ x y))))
+5
+```
+
+#### Records and Modules
+
+```lfe
+lfe> (defrecord person name age)
+#(record person)
+lfe> (c "tut24.lfe")
+#(module tut24)
+lfe> (tut24:demo)
+to fred: hello
+"goodbye"
+```
+
+#### Macros
+
+```lfe
+lfe> (defmacro unless (test body)
+        `(if (not ,test) ,body))
+lfe> (unless (> 2 3) 'ok)
+ok
+```
+
+#### Concurrency
+
+```lfe
+lfe> (c "tut19.lfe")
+#(module tut19)
+lfe> (tut19:start)
+Pong received ping
+Ping received pong
+Ping finished
+Pong finished
+```
+
