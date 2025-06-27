@@ -45,6 +45,7 @@ The interpreter now supports a broader set of commands:
 - `eject` to eject removable media
 - manage service runlevels with `chkconfig`
 - `caller` to display the current call stack frame
+- `exit` to terminate the shell with an optional status code
 
 Running the interpreter with no command argument starts an interactive shell.
 You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`). Type `exit` to leave the shell.
