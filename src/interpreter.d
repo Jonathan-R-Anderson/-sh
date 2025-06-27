@@ -5,7 +5,7 @@ import std.algorithm;
 import std.parallelism;
 import std.range;
 import std.file : chdir, getcwd, dirEntries, SpanMode, readText,
-    copy, rename, remove, mkdir, rmdir;
+    copy, rename, remove, mkdir, rmdir, exists;
 import std.process : system, environment;
 version(Posix) import core.sys.posix.unistd : chroot;
 import std.regex : regex, matchFirst;
@@ -154,7 +154,55 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
     }
 
     auto op = tokens[0];
-    if(op == "builtin") {
+    if(op == "command") {
+        bool useDefaultPath = false;
+        bool verbose = false;
+        bool veryVerbose = false;
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-")) {
+            auto t = tokens[idx];
+            if(t == "-p") useDefaultPath = true;
+            else if(t == "-v") verbose = true;
+            else if(t == "-V") veryVerbose = true;
+            else break;
+            idx++;
+        }
+        if(idx >= tokens.length) {
+            writeln("command: missing command");
+            return;
+        }
+        auto cmdName = tokens[idx];
+        auto args = tokens[idx+1 .. $];
+        auto subCmd = cmdName ~ (args.length ? " " ~ args.join(" ") : "");
+
+        auto oldPath = environment.get("PATH", "");
+        if(useDefaultPath)
+            environment["PATH"] = "/bin:/usr/bin:/usr/local/bin";
+
+        import std.file : exists;
+
+        auto searchPath = environment.get("PATH", "");
+        string cmdPath;
+        foreach(p; searchPath.split(":")) {
+            string candidate = p.length ? p ~ "/" ~ cmdName : cmdName;
+            if(exists(candidate)) { cmdPath = candidate; break; }
+        }
+
+        if(verbose || veryVerbose) {
+            if(cmdPath.length)
+                writeln(veryVerbose ? cmdName ~ " is " ~ cmdPath : cmdPath);
+            else
+                writeln(cmdName, " not found");
+        } else {
+            auto rc = system(subCmd);
+            if(rc != 0) {
+                writeln(cmdName, " exited with status ", rc);
+            }
+        }
+
+        if(useDefaultPath)
+            environment["PATH"] = oldPath;
+    } else if(op == "builtin") {
         if(tokens.length < 2) {
             writeln("Usage: builtin shell-builtin [args]");
             return;
