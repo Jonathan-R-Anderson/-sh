@@ -280,6 +280,24 @@ void runCommand(string cmd) {
                     writeln(fields[fieldIdx - 1]);
             }
         }
+    } else if(op == "basename") {
+        if(tokens.length < 2) {
+            writeln("basename: missing operand");
+            return;
+        }
+        auto path = tokens[1];
+        string base;
+        auto pos = path.lastIndexOf('/');
+        if(pos >= 0)
+            base = path[pos + 1 .. $];
+        else
+            base = path;
+        if(tokens.length > 2) {
+            auto suf = tokens[2];
+            if(base.endsWith(suf))
+                base = base[0 .. $ - suf.length];
+        }
+        writeln(base);
     } else if(op == "mkdir") {
         if(tokens.length < 2) {
             writeln("mkdir: missing operand");
