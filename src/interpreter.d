@@ -54,6 +54,9 @@ struct BgJob {
 BgJob[] bgJobs;
 size_t nextBgId;
 
+int loopDepth;
+int breakCount;
+
 /**
  * Simple interpreter skeleton for a Lisp-like language.
  * This implementation is intentionally minimal and is
@@ -174,9 +177,32 @@ void runCommand(string cmd) {
         int start = to!int(rangeParts[0]);
         int finish = to!int(rangeParts[1]);
         string sub = tokens[2 .. $].join(" ");
+        loopDepth++;
         foreach(i; iota(start, finish + 1)) {
+            if(breakCount > 0) { breakCount--; break; }
             runCommand(sub);
+            if(breakCount > 0) { breakCount--; break; }
         }
+        if(loopDepth > 0) loopDepth--;
+    } else if(op == "break") {
+        size_t n = 1;
+        if(tokens.length >= 2) {
+            try {
+                n = to!size_t(tokens[1]);
+            } catch(Exception) {
+                writeln("break: numeric argument required");
+                return;
+            }
+        }
+        if(n < 1) {
+            writeln("break: argument must be >= 1");
+            return;
+        }
+        if(loopDepth == 0) {
+            writeln("break: not in a loop");
+            return;
+        }
+        breakCount = cast(int)n;
     } else if(op == "cd") {
         if(tokens.length < 2) {
             writeln("cd: missing operand");
