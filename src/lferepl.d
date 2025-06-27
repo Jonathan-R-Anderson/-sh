@@ -120,6 +120,21 @@ class LfeParser : Parser {
             auto q = parseExpr();
             Expr[] elems = [Expr(false, "quote", null, false, false, false), q];
             return Expr(true, "", elems, false, false, false);
+        } else if (peek("BQUOTE")) {
+            consume("BQUOTE");
+            auto q = parseExpr();
+            Expr[] elems = [Expr(false, "backquote", null, false, false, false), q];
+            return Expr(true, "", elems, false, false, false);
+        } else if (peek("COMMA_AT")) {
+            consume("COMMA_AT");
+            auto q = parseExpr();
+            Expr[] elems = [Expr(false, "comma-at", null, false, false, false), q];
+            return Expr(true, "", elems, false, false, false);
+        } else if (peek("COMMA")) {
+            consume("COMMA");
+            auto q = parseExpr();
+            Expr[] elems = [Expr(false, "comma", null, false, false, false), q];
+            return Expr(true, "", elems, false, false, false);
         } else if (peek("HASHMAP")) {
             consume("HASHMAP");
             Expr[] elems;
@@ -289,6 +304,9 @@ immutable Rule[] rules = [
     Rule("STRING", regex("\"[^\"]*\"")),
     Rule("NUMBER", regex("[0-9]+(\\.[0-9]+)?")),
     Rule("ATOM", regex("'[a-zA-Z_+*/:<>=!?-][a-zA-Z0-9_+*/:<>=!?-]*")),
+    Rule("BQUOTE", regex("`")),
+    Rule("COMMA_AT", regex(",@")),
+    Rule("COMMA", regex(",")),
     Rule("QUOTE", regex("'")),
     Rule("SYMBOL", regex("[a-zA-Z_+*/:<>=!?-][a-zA-Z0-9_+*/:<>=!?-]*")),
     Rule("WS", regex("\\s+"))
@@ -422,6 +440,48 @@ Value quoteValue(Expr e) {
     }
     Value[] els; foreach(sub; e.list) els ~= quoteValue(sub);
     return listVal(els);
+}
+
+Value backquoteValue(Expr e) {
+    if(e.isList) {
+        if(e.list.length > 0 && !e.list[0].isList) {
+            auto h = e.list[0].atom;
+            if(h == "comma") {
+                return evalExpr(e.list[1]);
+            } else if(h == "comma-at") {
+                auto v = evalExpr(e.list[1]);
+                return v;
+            }
+        }
+        if(e.isTuple) {
+            Value[] elems; foreach(sub; e.list) elems ~= backquoteValue(sub);
+            return tupleVal(elems);
+        }
+        if(e.isMap) {
+            Value[string] m;
+            for(size_t i = 0; i + 1 < e.list.length; i += 2) {
+                auto k = backquoteValue(e.list[i]);
+                auto v = backquoteValue(e.list[i+1]);
+                m[valueToString(k)] = v;
+            }
+            return mapVal(m);
+        }
+        Value[] els;
+        foreach(sub; e.list) {
+            if(sub.isList && sub.list.length > 0 && !sub.list[0].isList &&
+               sub.list[0].atom == "comma-at") {
+                auto v = evalExpr(sub.list[1]);
+                if(v.kind == ValueKind.List)
+                    els ~= v.list;
+                else
+                    els ~= [v];
+            } else {
+                els ~= backquoteValue(sub);
+            }
+        }
+        return listVal(els);
+    }
+    return quoteValue(e);
 }
 
 Expr valueToExpr(Value v) {
@@ -672,6 +732,9 @@ Value evalList(Expr e) {
     } else if(head == "quote") {
         auto q = e.list[1];
         return quoteValue(q);
+    } else if(head == "backquote") {
+        auto q = e.list[1];
+        return backquoteValue(q);
     } else if(head == "eval") {
         auto val = evalExpr(e.list[1]);
         auto expr = valueToExpr(val);
