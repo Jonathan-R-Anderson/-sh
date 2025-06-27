@@ -26,6 +26,7 @@ import cron;
 import crontab;
 import csplit;
 import cut;
+import date;
 
 string[] history;
 string[string] aliases;
@@ -1145,9 +1146,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
                 writeln(frame.line, " ", frame.file);
         }
     } else if(op == "date") {
-        import std.datetime : Clock;
-        auto now = Clock.currTime();
-        writeln(now.toISOExtString());
+        dateCommand(tokens);
     } else if(op == "bg") {
         if(tokens.length == 1) {
             if(bgJobs.length == 0) {
