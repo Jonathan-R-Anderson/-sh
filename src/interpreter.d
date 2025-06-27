@@ -1250,6 +1250,42 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
                 }
             }
         }
+    } else if(op == "declare") {
+        bool print = false;
+        bool exportVar = false;
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-")) {
+            foreach(ch; tokens[idx][1 .. $]) {
+                final switch(ch) {
+                    case 'p': print = true; break;
+                    case 'x': exportVar = true; break;
+                    default: break;
+                }
+            }
+            idx++;
+        }
+
+        if(idx >= tokens.length) {
+            foreach(name, val; variables) {
+                writeln(name, "=\"", val, "\"");
+            }
+        } else {
+            foreach(arg; tokens[idx .. $]) {
+                auto eq = arg.indexOf('=');
+                string name;
+                string value;
+                if(eq > 0) {
+                    name = arg[0 .. eq];
+                    value = arg[eq+1 .. $];
+                    variables[name] = value;
+                    if(exportVar) environment[name] = value;
+                } else {
+                    name = arg;
+                    if(auto val = name in variables) value = *val; else value = "";
+                }
+                if(print) writeln(name, "=\"", value, "\"");
+            }
+        }
     } else if(op == "unalias") {
         if(tokens.length == 2 && tokens[1] == "-a") {
             aliases.clear();
