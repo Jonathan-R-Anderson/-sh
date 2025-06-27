@@ -31,7 +31,7 @@ The interpreter now supports a broader set of commands:
 - `bg` to run a command in the background or resume a stopped job
 - `jobs` to list background jobs
 - sequential commands separated by `;`
-- file utilities such as `cp`, `mv`, `rm`, `mkdir`, `rmdir`, and `touch`
+- file utilities such as `cp`, `mv`, `rm`, `mkdir`, `rmdir`, `touch`, and `chattr`
 - text display commands like `cat`, `head`, `tail`, and `grep`
 - `date` for the current time
 - schedule commands using `at`
