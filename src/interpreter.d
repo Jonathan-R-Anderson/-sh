@@ -12,6 +12,7 @@ string[] history;
 string[string] aliases;
 
 string[string] variables;
+
 string[string] colorCodes = [
     "black": "\033[30m",
     "red": "\033[31m",
@@ -64,9 +65,15 @@ void runCommand(string cmd) {
     auto tokens = cmd.split();
     if(tokens.length == 0) return;
 
-    if(auto ali = tokens[0] in aliases) {
-        auto aliTokens = (*ali).split();
+    string lastAlias;
+    int aliasDepth = 0;
+    while(auto ali = tokens[0] in aliases) {
+        if(tokens[0] == lastAlias || aliasDepth > 10) break;
+        lastAlias = tokens[0];
+        auto aliStr = *ali;
+        auto aliTokens = aliStr.split();
         tokens = aliTokens ~ tokens[1 .. $];
+        aliasDepth++;
     }
 
     // variable expansion
@@ -273,22 +280,35 @@ void runCommand(string cmd) {
         auto sub = tokens[1 .. $].join(" ");
         runBackground(sub);
     } else if(op == "alias") {
-        if(tokens.length == 1) {
+        if(tokens.length == 1 || (tokens.length == 2 && tokens[1] == "-p")) {
             foreach(name, val; aliases) {
-                writeln(name, "=", val);
+                writeln("alias ", name, "='", val, "'");
             }
-        } else if(tokens.length == 2 && tokens[1].indexOf('=') > 0) {
-            auto eq = tokens[1].indexOf('=');
-            auto name = tokens[1][0 .. eq];
-            auto value = tokens[1][eq+1 .. $];
-            aliases[name] = value;
-        } else if(tokens.length >= 3) {
-            auto name = tokens[1];
-            auto value = tokens[2 .. $].join(" ");
-            aliases[name] = value;
-        } else if(tokens.length == 2) {
-            auto name = tokens[1];
-            if(auto val = name in aliases) writeln(name, "=", *val);
+        } else {
+            size_t start = 1;
+            if(tokens.length > 1 && tokens[1] == "-p") start = 2;
+            foreach(arg; tokens[start .. $]) {
+                auto eq = arg.indexOf('=');
+                if(eq > 0) {
+                    auto name = arg[0 .. eq];
+                    auto value = arg[eq+1 .. $];
+                    aliases[name] = value;
+                } else {
+                    auto name = arg;
+                    if(auto val = name in aliases)
+                        writeln("alias ", name, "='", *val, "'");
+                }
+            }
+        }
+    } else if(op == "unalias") {
+        if(tokens.length == 2 && tokens[1] == "-a") {
+            aliases.clear();
+        } else if(tokens.length >= 2) {
+            foreach(name; tokens[1 .. $]) {
+                aliases.remove(name);
+            }
+        } else {
+            writeln("unalias: usage: unalias [-a] name [name ...]");
         }
     } else if(op == "apropos") {
         if(tokens.length < 2) {

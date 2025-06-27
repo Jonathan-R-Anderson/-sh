@@ -36,9 +36,9 @@ The interpreter now supports a broader set of commands:
 
 Running the interpreter with no command argument starts an interactive shell.
 You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`). Type `exit` to leave the shell.
-The shell now records command history which can be viewed with `history` and
-supports basic aliases using the `alias` builtin. You can repeat the previous
-command by typing `!!`.
+The shell now records command history which can be viewed with `history`.
+Aliases may be managed with the `alias` builtin and removed using `unalias`.
+You can repeat the previous command by typing `!!`.
 You can view a list of common Linux commands with the built-in `help` command,
 which prints the contents of `commands.txt`.
 The new `apropos` command searches this help text for a keyword so you can
