@@ -14,6 +14,7 @@ struct Expr {
     bool isList;
     string atom;
     Expr[] list;
+    bool isAtom;
 }
 
 class LfeParser : Parser {
@@ -30,41 +31,54 @@ class LfeParser : Parser {
                 if (pos >= tokens.length) break;
             }
             consume("RPAREN");
-            return Expr(true, "", elems);
+            return Expr(true, "", elems, false);
         } else if (peek("NUMBER")) {
             auto t = consume("NUMBER");
-            return Expr(false, t.value, null);
+            return Expr(false, t.value, null, false);
         } else if (peek("STRING")) {
             auto t = consume("STRING");
-            return Expr(false, t.value, null);
+            return Expr(false, t.value, null, false);
+        } else if (peek("ATOM")) {
+            auto t = consume("ATOM");
+            return Expr(false, t.value[1 .. $], null, true);
         } else if (peek("SYMBOL")) {
             auto t = consume("SYMBOL");
-            return Expr(false, t.value, null);
+            return Expr(false, t.value, null, false);
         }
         throw new Exception("Unexpected token");
     }
 }
 
-struct FunctionDef {
-    string[] params;
+struct FunctionClause {
+    Expr[] params;
     Expr body;
 }
 
-long[string] variables;
-FunctionDef[string] functions;
+double[string] variables;
+FunctionClause[][string] functions;
 
 bool isNumber(string s) {
-    foreach(ch; s) if(!ch.isDigit) return false;
-    return s.length > 0;
+    bool seenDot = false;
+    if(s.length == 0) return false;
+    foreach(ch; s) {
+        if(ch == '.') {
+            if(seenDot) return false;
+            seenDot = true;
+        } else if(!ch.isDigit) {
+            return false;
+        }
+    }
+    return true;
 }
 
-long evalExpr(Expr e);
+double evalExpr(Expr e);
 
 immutable Rule[] rules = [
     Rule("LPAREN", regex("\\(")),
     Rule("RPAREN", regex("\\)")),
     Rule("STRING", regex("\"[^\"]*\"")),
-    Rule("NUMBER", regex("[0-9]+")),
+    Rule("NUMBER", regex("[0-9]+(\\.[0-9]+)?")),
+    Rule("ATOM", regex("'[a-zA-Z_+*/:<>=!?-][a-zA-Z0-9_+*/:<>=!?-]*")),
     Rule("SYMBOL", regex("[a-zA-Z_+*/:<>=!?-][a-zA-Z0-9_+*/:<>=!?-]*")),
     Rule("WS", regex("\\s+"))
 ];
@@ -93,16 +107,24 @@ void loadFile(string path) {
     }
 }
 
-long evalList(Expr e) {
+double evalList(Expr e) {
     if(e.list.length == 0) return 0;
     auto head = e.list[0].atom;
     if(head == "+") {
-        long result = 0;
+        double result = 0;
         foreach(arg; e.list[1 .. $]) result += evalExpr(arg);
         return result;
+    } else if(head == "-") {
+        double result = evalExpr(e.list[1]);
+        foreach(arg; e.list[2 .. $]) result -= evalExpr(arg);
+        return result;
     } else if(head == "*") {
-        long result = 1;
+        double result = 1;
         foreach(arg; e.list[1 .. $]) result *= evalExpr(arg);
+        return result;
+    } else if(head == "/") {
+        double result = evalExpr(e.list[1]);
+        foreach(arg; e.list[2 .. $]) result /= evalExpr(arg);
         return result;
     } else if(head == "set") {
         auto name = e.list[1].atom;
@@ -111,18 +133,38 @@ long evalList(Expr e) {
         return val;
     } else if(head == "defun") {
         auto name = e.list[1].atom;
-        auto params = e.list[2].list.map!(p => p.atom).array;
-        auto body = e.list[3];
-        functions[name] = FunctionDef(params, body);
+        FunctionClause[] clauses;
+        if(e.list.length > 4 || (e.list[2].isList && e.list[2].list.length == 2 && e.list[2].list[0].isList)) {
+            foreach(cl; e.list[2 .. $]) {
+                auto params = cl.list[0].list;
+                auto body = cl.list[1];
+                clauses ~= FunctionClause(params, body);
+            }
+        } else {
+            auto params = e.list[2].list;
+            auto body = e.list[3];
+            clauses ~= FunctionClause(params, body);
+        }
+        functions[name] = clauses;
         return 0;
     } else if(head == "defmodule") {
         auto modName = e.list[1].atom;
         foreach(expr; e.list[2 .. $]) {
             if(expr.isList && expr.list.length > 0 && expr.list[0].atom == "defun") {
                 auto fname = expr.list[1].atom;
-                auto params = expr.list[2].list.map!(p => p.atom).array;
-                auto body = expr.list[3];
-                functions[modName ~ ":" ~ fname] = FunctionDef(params, body);
+                FunctionClause[] clauses;
+                if(expr.list.length > 4 || (expr.list[2].isList && expr.list[2].list.length == 2 && expr.list[2].list[0].isList)) {
+                    foreach(cl; expr.list[2 .. $]) {
+                        auto params = cl.list[0].list;
+                        auto body = cl.list[1];
+                        clauses ~= FunctionClause(params, body);
+                    }
+                } else {
+                    auto params = expr.list[2].list;
+                    auto body = expr.list[3];
+                    clauses ~= FunctionClause(params, body);
+                }
+                functions[modName ~ ":" ~ fname] = clauses;
             }
         }
         return 0;
@@ -137,24 +179,43 @@ long evalList(Expr e) {
         // signal to caller
         throw new Exception("__exit__");
     } else if(auto fn = head in functions) {
-        auto def = *fn;
-        long[string] saved;
-        foreach(i, p; def.params) {
-            auto val = evalExpr(e.list[i+1]);
-            if(p in variables) saved[p] = variables[p];
-            variables[p] = val;
+        auto clauses = *fn;
+        auto args = e.list[1 .. $];
+        foreach(clause; clauses) {
+            if(clause.params.length != args.length) continue;
+            bool match = true;
+            string[] varNames;
+            double[string] saved;
+            foreach(i, pexp; clause.params) {
+                auto arg = args[i];
+                if(pexp.isAtom) {
+                    if(!(arg.isAtom && arg.atom == pexp.atom)) { match = false; break; }
+                } else {
+                    auto val = evalExpr(arg);
+                    auto name = pexp.atom;
+                    if(name in variables) saved[name] = variables[name];
+                    variables[name] = val;
+                    varNames ~= name;
+                }
+            }
+            if(match) {
+                auto result = evalExpr(clause.body);
+                foreach(k,v; saved) variables[k] = v;
+                foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                return result;
+            } else {
+                foreach(k,v; saved) variables[k] = v;
+                foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+            }
         }
-        auto result = evalExpr(def.body);
-        foreach(k, v; saved) variables[k] = v;
-        foreach(p; def.params) if(!(p in saved)) variables.remove(p);
-        return result;
+        return 0;
     }
     return 0;
 }
 
-long evalExpr(Expr e) {
+double evalExpr(Expr e) {
     if(!e.isList) {
-        if(isNumber(e.atom)) return to!long(e.atom);
+        if(isNumber(e.atom)) return to!double(e.atom);
         if(auto v = e.atom in variables) return *v;
         return 0;
     }
