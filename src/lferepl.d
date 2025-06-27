@@ -8,7 +8,7 @@ import std.string;
 import std.ascii : isDigit;
 import std.algorithm;
 import std.conv : to;
-import std.file : readText;
+import std.file : readText, copy;
 import std.parallelism;
 import core.sync.mutex : Mutex;
 import core.sync.condition : Condition;
@@ -995,6 +995,22 @@ Value evalList(Expr e) {
         }
         write(out);
         return atomVal("ok");
+    } else if(head == "cp") {
+        auto srcVal = evalExpr(e.list[1]);
+        auto dstVal = evalExpr(e.list[2]);
+        string src = valueToString(srcVal);
+        string dst = valueToString(dstVal);
+        if(src.length >= 2 && src[0] == '"' && src[$-1] == '"')
+            src = src[1 .. $-1];
+        if(dst.length >= 2 && dst[0] == '"' && dst[$-1] == '"')
+            dst = dst[1 .. $-1];
+        try {
+            copy(src, dst);
+            return atomVal("ok");
+        } catch(Exception e) {
+            writeln("cp: failed to copy ", src, " to ", dst);
+            return atomVal("error");
+        }
     } else if(head == "proplists:get_value") {
         auto key = evalExpr(e.list[1]);
         auto plist = evalExpr(e.list[2]);
