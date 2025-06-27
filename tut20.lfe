@@ -1,26 +1,26 @@
 (defmodule tut20
-  (export (start 0) (ping 1) (pong 0)))
+  (export (start 1) (ping 2) (pong 0)))
 
-(defun ping
-  ((0)
-   (! 'pong 'finished)
-   (lfe_io:format "Ping finished~n" ()))
-  ((n)
-   (! 'pong (tuple 'ping (self)))
+(defun ping (n pong-pid)
+  (link pong-pid)
+  (ping1 n pong-pid))
+
+(defun ping1
+  ((0 pong-pid)
+   (exit 'ping))
+  ((n pong-pid)
+   (! pong-pid (tuple 'ping (self)))
    (receive
      ('pong (lfe_io:format "Ping received pong~n" ())))
-   (ping (- n 1))))
+   (ping1 (- n 1) pong-pid)))
 
 (defun pong ()
   (receive
-    ('finished
-     (lfe_io:format "Pong finished~n" ()))
     ((tuple 'ping ping-pid)
      (lfe_io:format "Pong received ping~n" ())
      (! ping-pid 'pong)
      (pong))))
 
-(defun start ()
+(defun start (ping-node)
   (let ((pong-pid (spawn 'tut20 'pong ())))
-    (register 'pong pong-pid)
-    (spawn 'tut20 'ping '(3))))
+    (spawn ping-node 'tut20 'ping (list 3 pong-pid))))
