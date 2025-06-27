@@ -32,6 +32,9 @@ The interpreter now supports a broader set of commands:
 
 Running the interpreter with no command argument starts an interactive shell.
 You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`). Type `exit` to leave the shell.
+The shell now records command history which can be viewed with `history` and
+supports basic aliases using the `alias` builtin. You can repeat the previous
+command by typing `!!`.
 
 These examples demonstrate how additional Bash commands can be layered on top of a Haskell-inspired syntax. The goal remains to eventually cover the full Bash command set, including job control and other special operators.
 
