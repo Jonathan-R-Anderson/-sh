@@ -5,9 +5,19 @@ import std.algorithm;
 import std.parallelism;
 import std.range;
 import std.file : chdir, getcwd, dirEntries, SpanMode;
-import std.process : system;
+import std.process : system, environment;
 
 string[string] variables;
+string[string] colorCodes = [
+    "black": "\033[30m",
+    "red": "\033[31m",
+    "green": "\033[32m",
+    "yellow": "\033[33m",
+    "blue": "\033[34m",
+    "magenta": "\033[35m",
+    "cyan": "\033[36m",
+    "white": "\033[37m"
+];
 
 /**
  * Simple interpreter skeleton for a Lisp-like language.
@@ -117,9 +127,26 @@ void runCommand(string cmd) {
     }
 }
 
+void repl() {
+    auto ps1 = environment.get("PS1", "sh> ");
+    auto colorName = environment.get("PS_COLOR", "");
+    string colorCode;
+    if(auto c = colorName in colorCodes) colorCode = *c;
+    auto reset = colorCode.length ? "\033[0m" : "";
+    for(;;) {
+        write(colorCode, ps1, reset);
+        auto line = readln();
+        if(line is null) break;
+        line = line.strip;
+        if(line == "exit") break;
+        if(line.length == 0) continue;
+        run(line);
+    }
+}
+
 void main(string[] args) {
     if(args.length < 2) {
-        writeln("Usage: interpreter \"command string\"");
+        repl();
         return;
     }
     run(args[1]);
