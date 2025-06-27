@@ -21,6 +21,7 @@ import dir;
 import dircolors;
 import bc;
 import dc;
+import expr;
 import dd;
 import ddrescue;
 import df;
@@ -68,7 +69,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "export", "for", "grep", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "expr", "export", "for", "grep", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -701,6 +702,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         exit(code);
     } else if(op == "expand") {
         expand.expandCommand(tokens);
+    } else if(op == "expr") {
+        exprCommand(tokens);
     } else if(op == "awk") {
         if(tokens.length < 2) {
             writeln("awk program [file...]");
