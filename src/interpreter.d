@@ -43,6 +43,16 @@ struct AtJob {
 AtJob[] atJobs;
 size_t nextAtId;
 
+struct BgJob {
+    size_t id;
+    string cmd;
+    Thread thread;
+    bool running;
+}
+
+BgJob[] bgJobs;
+size_t nextBgId;
+
 /**
  * Simple interpreter skeleton for a Lisp-like language.
  * This implementation is intentionally minimal and is
@@ -75,8 +85,16 @@ void runParallel(string input) {
 }
 
 void runBackground(string cmd) {
-    // Execute a command asynchronously without waiting
-    taskPool.put(() { run(cmd); });
+    // Execute a command asynchronously without waiting and track it
+    auto id = nextBgId++;
+    size_t idx = bgJobs.length;
+    auto thr = new Thread({
+        run(cmd);
+        bgJobs[idx].running = false;
+    });
+    bgJobs ~= BgJob(id, cmd, thr, true);
+    thr.start();
+    writeln("[", id, "] ", cmd, " &");
 }
 
 void runCommand(string cmd) {
@@ -511,12 +529,33 @@ void runCommand(string cmd) {
         auto now = Clock.currTime();
         writeln(now.toISOExtString());
     } else if(op == "bg") {
-        if(tokens.length < 2) {
-            writeln("Usage: bg command");
-            return;
+        if(tokens.length == 1) {
+            if(bgJobs.length == 0) {
+                writeln("bg: no current job");
+            } else {
+                auto ref job = bgJobs[$-1];
+                if(!job.running) {
+                    job.running = true;
+                    job.thread.start();
+                }
+            }
+        } else if(tokens[1].startsWith("%")) {
+            auto id = to!size_t(tokens[1][1 .. $]);
+            bool found = false;
+            foreach(ref job; bgJobs) {
+                if(job.id == id) {
+                    found = true;
+                    if(!job.running) {
+                        job.running = true;
+                        job.thread.start();
+                    }
+                }
+            }
+            if(!found) writeln("bg: ", tokens[1], ": no such job");
+        } else {
+            auto sub = tokens[1 .. $].join(" ");
+            runBackground(sub);
         }
-        auto sub = tokens[1 .. $].join(" ");
-        runBackground(sub);
     } else if(op == "at") {
         if(tokens.length < 3) {
             writeln("Usage: at seconds command");
@@ -652,6 +691,11 @@ void runCommand(string cmd) {
     } else if(op == "history") {
         foreach(i, cmdLine; history) {
             writeln(i + 1, " ", cmdLine);
+        }
+    } else if(op == "jobs") {
+        foreach(job; bgJobs) {
+            auto status = job.running ? "Running" : "Done";
+            writeln("[", job.id, "]\t", status, "\t", job.cmd);
         }
     } else if(op == "apt" || op == "apt-get") {
         auto rc = system(cmd);
