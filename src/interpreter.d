@@ -225,11 +225,72 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
         breakCount = cast(int)n;
     } else if(op == "cd") {
-        if(tokens.length < 2) {
-            writeln("cd: missing operand");
-            return;
+        bool physical = false; // -P
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-") && tokens[idx] != "-") {
+            auto t = tokens[idx];
+            if(t == "--") { idx++; break; }
+            else if(t == "-P") { physical = true; }
+            else if(t == "-L") { physical = false; }
+            else break;
+            idx++;
         }
-        chdir(tokens[1]);
+
+        string arg = idx < tokens.length ? tokens[idx] : "";
+        string cwd = getcwd();
+        string dest;
+        bool printPath = false;
+        if(arg.length == 0) {
+            dest = environment.get("HOME", "");
+            if(dest.length == 0) {
+                writeln("cd: HOME not set");
+                return;
+            }
+        } else if(arg == "-") {
+            dest = environment.get("OLDPWD", "");
+            if(dest.length == 0) {
+                writeln("cd: OLDPWD not set");
+                return;
+            }
+            printPath = true;
+        } else {
+            dest = arg;
+        }
+
+        if(!dest.startsWith("/") && !dest.startsWith("./") && !dest.startsWith("../")) {
+            auto cdpath = environment.get("CDPATH", "");
+            foreach(p; cdpath.split(":")) {
+                if(p.length == 0) p = ".";
+                auto candidate = p ~ "/" ~ dest;
+                try {
+                    chdir(candidate);
+                    dest = candidate;
+                    printPath = true;
+                    break;
+                } catch(Exception) {
+                }
+            }
+            chdir(cwd);
+        }
+
+        string finalDest = dest;
+        try {
+            chdir(finalDest);
+            string newPath;
+            if(physical)
+                newPath = getcwd();
+            else {
+                if(dest.startsWith("/"))
+                    newPath = dest;
+                else
+                    newPath = cwd ~ "/" ~ dest;
+            }
+            environment["OLDPWD"] = cwd;
+            environment["PWD"] = newPath;
+            if(printPath) writeln(newPath);
+        } catch(Exception e) {
+            writeln("cd: cannot access ", dest);
+        }
     } else if(op == "pwd") {
         writeln(getcwd());
     } else if(op == "ls") {
