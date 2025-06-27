@@ -63,3 +63,31 @@ ldc2 src/lfe.d src/dlexer.d src/dparser.d -of=lfe
 ```
 
 This will print the generated Erlang code for the given expression.
+
+## LFE REPL
+
+A small interactive interpreter `src/lferepl.d` implements a minimal LFE-like REPL. Build it with:
+
+```bash
+ldc2 src/lferepl.d src/dlexer.d src/dparser.d -of=lferepl
+./lferepl
+```
+
+Inside the REPL you can evaluate prefix expressions, assign variables and define functions:
+
+```
+lfe> (* 2 (+ 1 2 3 4 5 6))
+42
+lfe> (set multiplier 2)
+2
+lfe> (* multiplier (+ 1 2 3 4 5 6))
+42
+lfe> (defun double (x) (* 2 x))
+0
+lfe> (double 21)
+42
+lfe> (exit)
+```
+
+The REPL exits when `(exit)` is evaluated.
+
