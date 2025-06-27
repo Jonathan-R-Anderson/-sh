@@ -8,6 +8,7 @@ import std.string;
 import std.ascii : isDigit;
 import std.algorithm;
 import std.conv : to;
+import std.file : readText;
 
 struct Expr {
     bool isList;
@@ -59,6 +60,39 @@ bool isNumber(string s) {
 
 long evalExpr(Expr e);
 
+immutable Rule[] rules = [
+    Rule("LPAREN", regex("\\(")),
+    Rule("RPAREN", regex("\\)")),
+    Rule("STRING", regex("\"[^\"]*\"")),
+    Rule("NUMBER", regex("[0-9]+")),
+    Rule("SYMBOL", regex("[a-zA-Z_+*/:<>=!?-][a-zA-Z0-9_+*/:<>=!?-]*")),
+    Rule("WS", regex("\\s+"))
+];
+
+Token[] lexInput(string input) {
+    auto lex = new Lexer(rules);
+    auto toks = lex.tokenize(input);
+    return toks.filter!(t => t.type != "WS").array;
+}
+
+Expr parseString(string code) {
+    auto toks = lexInput(code);
+    auto parser = new LfeParser(toks);
+    return parser.parseExpr();
+}
+
+void loadFile(string path) {
+    auto text = readText(path);
+    auto ast = parseString(text);
+    evalExpr(ast);
+    if(ast.isList && ast.list.length > 0 && ast.list[0].atom == "defmodule") {
+        auto modName = ast.list[1].atom;
+        writeln("#(module ", modName, ")");
+    } else {
+        writeln("ok");
+    }
+}
+
 long evalList(Expr e) {
     if(e.list.length == 0) return 0;
     auto head = e.list[0].atom;
@@ -80,6 +114,24 @@ long evalList(Expr e) {
         auto params = e.list[2].list.map!(p => p.atom).array;
         auto body = e.list[3];
         functions[name] = FunctionDef(params, body);
+        return 0;
+    } else if(head == "defmodule") {
+        auto modName = e.list[1].atom;
+        foreach(expr; e.list[2 .. $]) {
+            if(expr.isList && expr.list.length > 0 && expr.list[0].atom == "defun") {
+                auto fname = expr.list[1].atom;
+                auto params = expr.list[2].list.map!(p => p.atom).array;
+                auto body = expr.list[3];
+                functions[modName ~ ":" ~ fname] = FunctionDef(params, body);
+            }
+        }
+        return 0;
+    } else if(head == "c") {
+        auto fexpr = e.list[1];
+        auto path = fexpr.atom;
+        if(path.length >= 2 && path[0] == '"' && path[$-1] == '"')
+            path = path[1 .. $-1];
+        loadFile(path);
         return 0;
     } else if(head == "exit") {
         // signal to caller
@@ -111,14 +163,6 @@ long evalExpr(Expr e) {
 
 void repl() {
     writeln("LFE REPL -- type (exit) to quit");
-    auto rules = [
-        Rule("LPAREN", regex("\\(")),
-        Rule("RPAREN", regex("\\)")),
-        Rule("STRING", regex("\"[^\"]*\"")),
-        Rule("NUMBER", regex("[0-9]+")),
-        Rule("SYMBOL", regex("[a-zA-Z_+*/:<>=!?-][a-zA-Z0-9_+*/:<>=!?-]*")),
-        Rule("WS", regex("\\s+"))
-    ];
     auto lex = new Lexer(rules);
     for(;;) {
         write("lfe> ");
