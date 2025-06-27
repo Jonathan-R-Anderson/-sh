@@ -18,18 +18,20 @@ struct Expr {
     bool isTuple;
 }
 
-enum ValueKind { Number, Atom, Tuple }
+enum ValueKind { Number, Atom, Tuple, List }
 
 struct Value {
     ValueKind kind;
     double number;
     string atom;
     Value[] tuple;
+    Value[] list;
 }
 
-Value num(double n) { return Value(ValueKind.Number, n, "", null); }
-Value atomVal(string a) { return Value(ValueKind.Atom, 0, a, null); }
-Value tupleVal(Value[] t) { return Value(ValueKind.Tuple, 0, "", t); }
+Value num(double n) { return Value(ValueKind.Number, n, "", null, null); }
+Value atomVal(string a) { return Value(ValueKind.Atom, 0, a, null, null); }
+Value tupleVal(Value[] t) { return Value(ValueKind.Tuple, 0, "", t, null); }
+Value listVal(Value[] l) { return Value(ValueKind.List, 0, "", null, l); }
 
 string valueToString(Value v) {
     final switch(v.kind) {
@@ -44,6 +46,13 @@ string valueToString(Value v) {
             }
             if(s.length > 0) s = s[0 .. $-1];
             return "#(" ~ s ~ ")";
+        case ValueKind.List:
+            string ls;
+            foreach(elem; v.list) {
+                ls ~= valueToString(elem) ~ " ";
+            }
+            if(ls.length > 0) ls = ls[0 .. $-1];
+            return "(" ~ ls ~ ")";
     }
     return "";
 }
@@ -54,7 +63,12 @@ class LfeParser : Parser {
     }
 
     Expr parseExpr() {
-        if (peek("HASHLPAREN")) {
+        if (peek("QUOTE")) {
+            consume("QUOTE");
+            auto q = parseExpr();
+            Expr[] elems = [Expr(false, "quote", null, false, false), q];
+            return Expr(true, "", elems, false, false);
+        } else if (peek("HASHLPAREN")) {
             consume("HASHLPAREN");
             Expr[] elems;
             while (!peek("RPAREN")) {
@@ -63,14 +77,15 @@ class LfeParser : Parser {
             }
             consume("RPAREN");
             return Expr(true, "", elems, false, true);
-        } else if (peek("LPAREN")) {
-            consume("LPAREN");
+        } else if (peek("LPAREN") || peek("LBRACK")) {
+            bool br = peek("LBRACK");
+            if(br) consume("LBRACK"); else consume("LPAREN");
             Expr[] elems;
-            while (!peek("RPAREN")) {
+            while (!(br ? peek("RBRACK") : peek("RPAREN"))) {
                 elems ~= parseExpr();
                 if (pos >= tokens.length) break;
             }
-            consume("RPAREN");
+            if(br) consume("RBRACK"); else consume("RPAREN");
             return Expr(true, "", elems, false, false);
         } else if (peek("NUMBER")) {
             auto t = consume("NUMBER");
@@ -112,14 +127,18 @@ bool isNumber(string s) {
 }
 
 Value evalExpr(Expr e);
+Value quoteValue(Expr e);
 
 immutable Rule[] rules = [
     Rule("HASHLPAREN", regex("#\\(")),
     Rule("LPAREN", regex("\\(")),
+    Rule("LBRACK", regex("\\[")),
+    Rule("RBRACK", regex("\\]")),
     Rule("RPAREN", regex("\\)")),
     Rule("STRING", regex("\"[^\"]*\"")),
     Rule("NUMBER", regex("[0-9]+(\\.[0-9]+)?")),
     Rule("ATOM", regex("'[a-zA-Z_+*/:<>=!?-][a-zA-Z0-9_+*/:<>=!?-]*")),
+    Rule("QUOTE", regex("'")),
     Rule("SYMBOL", regex("[a-zA-Z_+*/:<>=!?-][a-zA-Z0-9_+*/:<>=!?-]*")),
     Rule("WS", regex("\\s+"))
 ];
@@ -160,6 +179,19 @@ bool matchPattern(Value val, Expr pat, ref string[] varNames, ref Value[string] 
         }
         return true;
     }
+    if(pat.isList) {
+        if(pat.list.length == 0) {
+            return val.kind == ValueKind.List && val.list.length == 0;
+        }
+        if(pat.list.length == 3 && !pat.list[0].isList && pat.list[0].atom == "cons") {
+            if(val.kind != ValueKind.List || val.list.length == 0) return false;
+            auto headVal = val.list[0];
+            auto tailVal = listVal(val.list[1 .. $]);
+            if(!matchPattern(headVal, pat.list[1], varNames, saved)) return false;
+            if(!matchPattern(tailVal, pat.list[2], varNames, saved)) return false;
+            return true;
+        }
+    }
     if(!pat.isList) {
         auto name = pat.atom;
         if(name in variables) saved[name] = variables[name];
@@ -170,8 +202,22 @@ bool matchPattern(Value val, Expr pat, ref string[] varNames, ref Value[string] 
     return false;
 }
 
+Value quoteValue(Expr e) {
+    if(!e.isList) {
+        if(e.isAtom) return atomVal(e.atom);
+        if(isNumber(e.atom)) return num(to!double(e.atom));
+        return atomVal(e.atom);
+    }
+    if(e.isTuple) {
+        Value[] elems; foreach(sub; e.list) elems ~= quoteValue(sub);
+        return tupleVal(elems);
+    }
+    Value[] els; foreach(sub; e.list) els ~= quoteValue(sub);
+    return listVal(els);
+}
+
 Value evalList(Expr e) {
-    if(e.list.length == 0) return num(0);
+    if(e.list.length == 0) return listVal([]);
     auto head = e.list[0].atom;
     if(head == "+") {
         double result = 0;
@@ -193,6 +239,20 @@ Value evalList(Expr e) {
         Value[] els;
         foreach(arg; e.list[1 .. $]) els ~= evalExpr(arg);
         return tupleVal(els);
+    } else if(head == "list") {
+        Value[] els;
+        foreach(arg; e.list[1 .. $]) els ~= evalExpr(arg);
+        return listVal(els);
+    } else if(head == "cons") {
+        auto first = evalExpr(e.list[1]);
+        auto rest = evalExpr(e.list[2]);
+        Value[] combined = [first];
+        if(rest.kind == ValueKind.List)
+            combined ~= rest.list;
+        return listVal(combined);
+    } else if(head == "quote") {
+        auto q = e.list[1];
+        return quoteValue(q);
     } else if(head == "set") {
         auto name = e.list[1].atom;
         auto val = evalExpr(e.list[2]);
