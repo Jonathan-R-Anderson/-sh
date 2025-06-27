@@ -20,6 +20,9 @@ B
     break    Exit from a loop
     builtin    Run a shell builtin
     bzip2    Compress or decompress named file(s)
+    bunzip2    Decompress .bz2 files
+    bzcat    Decompress to standard output
+    bzip2recover    Recover data from damaged .bz2 files
 C
     cal    Display a calendar
     caller    Return the context of any active subroutine call
