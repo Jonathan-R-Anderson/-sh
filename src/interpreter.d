@@ -24,6 +24,7 @@ import dc;
 import expr;
 import dd;
 import ddrescue;
+import fdformat;
 import df;
 import du;
 import dmesg;
@@ -67,7 +68,7 @@ string[] builtinNames = [
     "bind", "break", "builtin", "bunzip2", "bzcat", "bzip2", "bzip2recover",
     "cal", "caller", "cat", "cd", "cfdisk", "chattr", "chgrp", "chkconfig",
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
-    "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue",
+    "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
     "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "grep", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
@@ -300,6 +301,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         ddCommand(tokens);
     } else if(op == "ddrescue") {
         ddrescueCommand(tokens);
+    } else if(op == "fdformat") {
+        fdformatCommand(tokens);
     } else if(op == "df") {
         dfCommand(tokens);
     } else if(op == "du") {
