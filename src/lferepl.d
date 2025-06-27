@@ -157,6 +157,8 @@ class LfeParser : Parser {
 struct FunctionClause {
     Expr[] params;
     Expr body;
+    Expr guard;
+    bool hasGuard;
 }
 
 Value[string] variables;
@@ -363,6 +365,10 @@ Value evalList(Expr e) {
         double result = evalExpr(e.list[1]).number;
         foreach(arg; e.list[2 .. $]) result /= evalExpr(arg).number;
         return num(result);
+    } else if(head == ">") {
+        auto a = evalExpr(e.list[1]).number;
+        auto b = evalExpr(e.list[2]).number;
+        return atomVal(a > b ? "true" : "false");
     } else if(head == "tuple") {
         Value[] els;
         foreach(arg; e.list[1 .. $]) els ~= evalExpr(arg);
@@ -386,6 +392,26 @@ Value evalList(Expr e) {
         auto val = evalExpr(e.list[2]);
         variables[name] = val;
         return val;
+    } else if(head == "let") {
+        auto bindings = e.list[1];
+        string[] names;
+        Value[string] saved;
+        foreach(b; bindings.list) {
+            auto var = b.list[0].atom;
+            auto val = evalExpr(b.list[1]);
+            if(var in variables) saved[var] = variables[var];
+            names ~= var;
+            variables[var] = val;
+        }
+        Value result = num(0);
+        for(size_t i = 2; i < e.list.length; i++) {
+            result = evalExpr(e.list[i]);
+        }
+        foreach(n; names) {
+            if(n in saved) variables[n] = saved[n];
+            else variables.remove(n);
+        }
+        return result;
     } else if(head == "map") {
         Value[string] m;
         for(size_t i = 1; i + 1 < e.list.length; i += 2) {
@@ -449,13 +475,24 @@ Value evalList(Expr e) {
         if(e.list.length > 4 || (e.list[2].isList && e.list[2].list.length == 2 && e.list[2].list[0].isList)) {
             foreach(cl; e.list[2 .. $]) {
                 auto params = cl.list[0].list;
-                auto body = cl.list[1];
-                clauses ~= FunctionClause(params, body);
+                Expr guard;
+                bool hasGuard = false;
+                Expr body;
+                if(cl.list.length == 3 && cl.list[1].isList && cl.list[1].list.length > 0 && !cl.list[1].list[0].isList && cl.list[1].list[0].atom == "when") {
+                    guard = cl.list[1].list[1];
+                    hasGuard = true;
+                    body = cl.list[2];
+                } else {
+                    body = cl.list[1];
+                }
+                clauses ~= FunctionClause(params, body, guard, hasGuard);
             }
         } else {
             auto params = e.list[2].list;
+            Expr guard;
+            bool hasGuard = false;
             auto body = e.list[3];
-            clauses ~= FunctionClause(params, body);
+            clauses ~= FunctionClause(params, body, guard, hasGuard);
         }
         functions[name] = clauses;
         string entry = name ~ "/" ~ to!string(clauses[0].params.length);
@@ -471,13 +508,24 @@ Value evalList(Expr e) {
                 if(expr.list.length > 4 || (expr.list[2].isList && expr.list[2].list.length == 2 && expr.list[2].list[0].isList)) {
                     foreach(cl; expr.list[2 .. $]) {
                         auto params = cl.list[0].list;
-                        auto body = cl.list[1];
-                        clauses ~= FunctionClause(params, body);
+                        Expr guard;
+                        bool hasGuard = false;
+                        Expr body;
+                        if(cl.list.length == 3 && cl.list[1].isList && cl.list[1].list.length > 0 && !cl.list[1].list[0].isList && cl.list[1].list[0].atom == "when") {
+                            guard = cl.list[1].list[1];
+                            hasGuard = true;
+                            body = cl.list[2];
+                        } else {
+                            body = cl.list[1];
+                        }
+                        clauses ~= FunctionClause(params, body, guard, hasGuard);
                     }
                 } else {
                     auto params = expr.list[2].list;
+                    Expr guard;
+                    bool hasGuard = false;
                     auto body = expr.list[3];
-                    clauses ~= FunctionClause(params, body);
+                    clauses ~= FunctionClause(params, body, guard, hasGuard);
                 }
                 functions[modName ~ ":" ~ fname] = clauses;
                 string entry = fname ~ "/" ~ to!string(clauses[0].params.length);
@@ -511,6 +559,18 @@ Value evalList(Expr e) {
                 if(!matchPattern(val, pexp, varNames, saved)) { match = false; break; }
             }
             if(match) {
+                if(clause.hasGuard) {
+                    auto gval = evalExpr(clause.guard);
+                    bool pass = false;
+                    if(gval.kind == ValueKind.Number) pass = gval.number != 0;
+                    else if(gval.kind == ValueKind.Atom) pass = gval.atom != "false";
+                    else pass = true;
+                    if(!pass) {
+                        foreach(k,v; saved) variables[k] = v;
+                        foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                        continue;
+                    }
+                }
                 auto result = evalExpr(clause.body);
                 foreach(k,v; saved) variables[k] = v;
                 foreach(n; varNames) if(!(n in saved)) variables.remove(n);
