@@ -23,6 +23,7 @@ import cksum;
 import cmp;
 import comm;
 import cron;
+import crontab;
 
 string[] history;
 string[string] aliases;
@@ -1049,6 +1050,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         comm.commFiles(file1, file2, s1, s2, s3, check, delim);
     } else if(op == "cron") {
         cronCommand(tokens);
+    } else if(op == "crontab") {
+        crontabCommand(tokens);
     } else if(op == "cal") {
         bool monday = false;
         bool yearFlag = false;
