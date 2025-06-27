@@ -31,8 +31,20 @@ The interpreter now supports a broader set of commands:
 - sequential commands separated by `;`
 
 Running the interpreter with no command argument starts an interactive shell.
-You can customize the prompt text using the `PS1` environment variable and its
-color with `PS_COLOR` (e.g. `PS_COLOR=green`). Type `exit` to leave the shell.
+You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`). Type `exit` to leave the shell.
 
 These examples demonstrate how additional Bash commands can be layered on top of a Haskell-inspired syntax. The goal remains to eventually cover the full Bash command set, including job control and other special operators.
 
+## Building Pseudo Languages
+
+A small lexer and parser framework inspired by Python's SLY is provided in
+`src/dlexer.d` and `src/dparser.d`. These modules allow custom token rules and
+implement a simple recursive-descent parser.
+
+The sample program `src/example.d` evaluates arithmetic expressions using this
+framework:
+
+```bash
+ldc2 src/example.d src/dlexer.d src/dparser.d -of=example
+./example "1 + 2 * 3"   # prints 7
+```
