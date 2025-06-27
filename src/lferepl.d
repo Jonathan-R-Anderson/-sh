@@ -172,8 +172,14 @@ struct FunctionClause {
     bool hasGuard;
 }
 
+struct MacroDef {
+    string[] params;
+    Expr body;
+}
+
 Value[string] variables;
 FunctionClause[][string] functions;
+MacroDef[string] macros;
 string[][string] moduleFunctions;
 string[][string] recordDefs;
 size_t pidCounter;
@@ -271,6 +277,7 @@ bool isNumber(string s) {
 Value evalExpr(Expr e);
 Value quoteValue(Expr e);
 Expr valueToExpr(Value v);
+Expr macroExpand(Expr e);
 
 immutable Rule[] rules = [
     Rule("HASHMAP", regex("#M\\(")),
@@ -568,6 +575,40 @@ Value callFunctionDirect(string name, Value[] argVals) {
         }
     }
     return num(0);
+}
+
+Expr callMacro(string name, Expr[] args) {
+    auto m = macros[name];
+    Value[string] saved;
+    string[] varNames;
+    foreach(i, pname; m.params) {
+        if(i >= args.length) break;
+        auto val = quoteValue(args[i]);
+        if(pname in variables) saved[pname] = variables[pname];
+        variables[pname] = val;
+        varNames ~= pname;
+    }
+    auto result = evalExpr(m.body);
+    foreach(k,v; saved) variables[k] = v;
+    foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+    return valueToExpr(result);
+}
+
+Expr macroExpand(Expr e) {
+    if(!e.isList) return e;
+    if(e.list.length > 0 && !e.list[0].isList && e.list[0].atom == "quote")
+        return e;
+    auto cur = e;
+    while(cur.isList && cur.list.length > 0 && !cur.list[0].isList && (cur.list[0].atom in macros)) {
+        auto name = cur.list[0].atom;
+        auto args = cur.list[1 .. $];
+        cur = callMacro(name, args);
+        if(!cur.isList) return cur;
+    }
+    if(!cur.isList) return cur;
+    Expr[] newList;
+    foreach(elem; cur.list) newList ~= macroExpand(elem);
+    return Expr(true, cur.atom, newList, cur.isAtom, cur.isTuple, cur.isMap);
 }
 
 Value evalList(Expr e) {
@@ -909,6 +950,18 @@ Value evalList(Expr e) {
         foreach(f; e.list[2 .. $]) fields ~= f.atom;
         recordDefs[rname] = fields;
         return num(0);
+    } else if(head == "defmacro") {
+        auto name = e.list[1].atom;
+        string[] params;
+        foreach(p; e.list[2].list) params ~= p.atom;
+        auto body = e.list[3];
+        macros[name] = MacroDef(params, body);
+        return num(0);
+    } else if(head == "macroexpand") {
+        auto val = evalExpr(e.list[1]);
+        auto expr = valueToExpr(val);
+        auto expanded = macroExpand(expr);
+        return quoteValue(expanded);
     } else if(head == "defun") {
         auto name = e.list[1].atom;
         FunctionClause[] clauses;
@@ -971,6 +1024,12 @@ Value evalList(Expr e) {
                 string entry = fname ~ "/" ~ to!string(clauses[0].params.length);
                 if(!(modName in moduleFunctions)) moduleFunctions[modName] = [];
                 if(entry !in moduleFunctions[modName]) moduleFunctions[modName] ~= entry;
+            } else if(expr.isList && expr.list.length > 0 && expr.list[0].atom == "defmacro") {
+                auto mname = expr.list[1].atom;
+                string[] params;
+                foreach(p; expr.list[2].list) params ~= p.atom;
+                auto body = expr.list[3];
+                macros[mname] = MacroDef(params, body);
             }
         }
         return num(0);
@@ -1033,7 +1092,9 @@ Value evalList(Expr e) {
 }
 
 Value evalExpr(Expr e) {
-    if(!e.isList) {
+    if(e.isList) {
+        e = macroExpand(e);
+    } else {
         if(e.isAtom) return atomVal(e.atom);
         if(isNumber(e.atom)) return num(to!double(e.atom));
         if(auto v = e.atom in variables) return *v;
