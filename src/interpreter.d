@@ -7,6 +7,7 @@ import std.range;
 import std.file : chdir, getcwd, dirEntries, SpanMode, readText,
     copy, rename, remove, mkdir, rmdir;
 import std.process : system, environment;
+version(Posix) import core.sys.posix.unistd : chroot;
 import std.regex : regex, matchFirst;
 import std.path : globMatch;
 import std.conv : to;
@@ -807,16 +808,26 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
 
         auto newroot = tokens[1];
         string cmdLine;
-        if(tokens.length > 2) {
+        if(tokens.length > 2)
             cmdLine = tokens[2 .. $].join(" ");
-        } else {
-            auto shellCmd = environment.get("SHELL", "/bin/sh");
-            cmdLine = shellCmd ~ " -i";
+
+        try {
+            version(Posix) {
+                if(chroot(newroot.toStringz) != 0) {
+                    writeln("chroot: unable to change root to ", newroot);
+                    return;
+                }
+                chdir("/");
+            }
+        } catch(Exception e) {
+            writeln("chroot failed: ", e.msg);
+            return;
         }
 
-        auto rc = system("chroot " ~ newroot ~ " " ~ cmdLine);
-        if(rc != 0)
-            writeln("chroot failed with code ", rc);
+        if(cmdLine.length)
+            run(cmdLine);
+        else
+            repl();
     } else if(op == "cfdisk") {
         string optP;
         string device = "/dev/vda";
