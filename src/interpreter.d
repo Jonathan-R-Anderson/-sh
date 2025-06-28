@@ -64,6 +64,12 @@ import iconv;
 import id;
 import ifcmd;
 import ifconfig;
+import ifdown;
+import ifup;
+import importcmd;
+import install;
+import iostat;
+import ip;
 
 string[] history;
 string[string] aliases;
@@ -92,7 +98,7 @@ string[] builtinNames = [
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
     "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "getfacl", "groupadd", "groupdel", "groupmod", "groups", "gzip", "hash", "head",
-    "help", "history", "iconv", "id", "if", "ifconfig", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
+    "help", "history", "iconv", "id", "if", "ifconfig", "ifdown", "ifup", "import", "install", "iostat", "ip", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
 
@@ -1755,6 +1761,18 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         ifcmd.ifCommand(tokens);
     } else if(op == "ifconfig") {
         ifconfig.ifconfigCommand(tokens);
+    } else if(op == "ifdown") {
+        ifdown.ifdownCommand(tokens);
+    } else if(op == "ifup") {
+        ifup.ifupCommand(tokens);
+    } else if(op == "import") {
+        importcmd.importCommand(tokens);
+    } else if(op == "install") {
+        install.installCommand(tokens);
+    } else if(op == "iostat") {
+        iostat.iostatCommand(tokens);
+    } else if(op == "ip") {
+        ip.ipCommand(tokens);
     } else if(op == "jobs") {
         foreach(job; bgJobs) {
             auto status = job.running ? "Running" : "Done";
