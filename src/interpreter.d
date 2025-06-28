@@ -54,6 +54,9 @@ import fsck;
 import awk;
 import fuser;
 import getopts;
+import getfacl;
+import groupadd;
+import groupdel;
 
 string[] history;
 string[string] aliases;
@@ -80,7 +83,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "getfacl", "groupadd", "groupdel", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -640,6 +643,12 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         fsck.fsckCommand(tokens);
     } else if(op == "fuser") {
         fuser.fuserCommand(tokens);
+    } else if(op == "getfacl") {
+        getfacl.getfaclCommand(tokens);
+    } else if(op == "groupadd") {
+        groupadd.groupaddCommand(tokens);
+    } else if(op == "groupdel") {
+        groupdel.groupdelCommand(tokens);
     } else if(op == "eject") {
         eject.ejectCommand(tokens);
     } else if(op == "env") {

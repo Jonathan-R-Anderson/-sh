@@ -46,6 +46,9 @@ The interpreter now supports a broader set of commands:
 - `dmesg` to print kernel messages
 - `fold` to wrap text to a fixed width
 - `fsck` to check and repair filesystems
+- `getfacl` to display file access control lists
+- `groupadd` to create new groups
+- `groupdel` to delete groups
 - `eject` to eject removable media
 - manage service runlevels with `chkconfig`
 - `caller` to display the current call stack frame
