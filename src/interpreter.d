@@ -83,6 +83,10 @@ import locate;
 import login;
 import logname;
 import logout;
+import look;
+import lsblk;
+import lsof;
+import ls;
 
 string[] history;
 string[string] aliases;
@@ -111,8 +115,8 @@ string[] builtinNames = [
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
     "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "getfacl", "groupadd", "groupdel", "groupmod", "groups", "gzip", "hash", "head",
-    "help", "history", "iconv", "id", "if", "ifconfig", "ifdown", "ifup", "import", "install", "iostat", "ip", "jobs", "join", "kill", "killall", "klist", "less", "let", "link", "ln", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
-    "rmdir", "tail", "touch", "unalias", "local", "locate", "login", "logname", "logout"
+    "help", "history", "iconv", "id", "if", "ifconfig", "ifdown", "ifup", "import", "install", "iostat", "ip", "jobs", "join", "kill", "killall", "klist", "less", "let", "link", "ln", "look", "login", "logname", "logout", "ls", "lsblk", "lsof", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
+    "rmdir", "tail", "touch", "unalias", "local", "locate"
 ];
 
 bool[string] builtinEnabled;
@@ -514,10 +518,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
     } else if(op == "pwd") {
         writeln(getcwd());
     } else if(op == "ls") {
-        string path = tokens.length > 1 ? tokens[1] : ".";
-        foreach(entry; dirEntries(path, SpanMode.shallow)) {
-            writeln(entry.name);
-        }
+        ls.lsCommand(tokens);
     } else if(op == "dir") {
         dir.dirCommand(tokens);
     } else if(op == "dircolors") {
@@ -1817,6 +1818,12 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         logname.lognameCommand(tokens);
     } else if(op == "logout") {
         logout.logoutCommand(tokens);
+    } else if(op == "look") {
+        look.lookCommand(tokens);
+    } else if(op == "lsblk") {
+        lsblk.lsblkCommand(tokens);
+    } else if(op == "lsof") {
+        lsof.lsofCommand(tokens);
     } else if(op == "apt" || op == "apt-get") {
         auto rc = system(cmd);
         if(rc != 0) {
