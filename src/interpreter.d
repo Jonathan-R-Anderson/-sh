@@ -57,12 +57,16 @@ import getopts;
 import getfacl;
 import groupadd;
 import groupdel;
+import groupmod;
+import groups;
+import gzip;
 
 string[] history;
 string[string] aliases;
 
 __gshared string[string] variables;
 string[string] keyBindings;
+string[string] hashedPaths;
 
 string[string] colorCodes = [
     "black": "\033[30m",
@@ -83,7 +87,7 @@ string[] builtinNames = [
     "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
-    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "getfacl", "groupadd", "groupdel", "head",
+    "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "getfacl", "groupadd", "groupdel", "groupmod", "groups", "gzip", "hash", "head",
     "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
@@ -152,6 +156,16 @@ void runParallel(string input) {
     } else {
         runCommand(input.strip, false, __LINE__, __FILE__);
     }
+}
+
+string findInPath(string name) {
+    import std.file : exists;
+    auto searchPath = environment.get("PATH", "");
+    foreach(p; searchPath.split(":")) {
+        string candidate = p.length ? p ~ "/" ~ name : name;
+        if(exists(candidate)) return candidate;
+    }
+    return "";
 }
 
 void runBackground(string cmd) {
@@ -649,6 +663,46 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         groupadd.groupaddCommand(tokens);
     } else if(op == "groupdel") {
         groupdel.groupdelCommand(tokens);
+    } else if(op == "groupmod") {
+        groupmod.groupmodCommand(tokens);
+    } else if(op == "groups") {
+        groups.groupsCommand(tokens);
+    } else if(op == "gzip") {
+        gzip.gzipCommand(tokens);
+    } else if(op == "hash") {
+        bool reset = false;
+        string filename;
+        size_t idx = 1;
+        while(idx < tokens.length && tokens[idx].startsWith("-")) {
+            auto t = tokens[idx];
+            if(t == "-r") { reset = true; idx++; }
+            else if(t == "-p") {
+                if(idx + 2 >= tokens.length) {
+                    writeln("hash: option requires an argument -- p");
+                    return;
+                }
+                filename = tokens[idx+1];
+                hashedPaths[tokens[idx+2]] = filename;
+                idx += 3;
+                return;
+            } else break;
+        }
+        if(reset) {
+            if(idx < tokens.length) {
+                foreach(name; tokens[idx .. $]) hashedPaths.remove(name);
+            } else {
+                hashedPaths.clear();
+            }
+        } else if(idx < tokens.length) {
+            foreach(name; tokens[idx .. $]) {
+                auto p = findInPath(name);
+                if(p.length) hashedPaths[name] = p;
+            }
+        } else {
+            foreach(name, path; hashedPaths) {
+                writeln(path, "\t", name);
+            }
+        }
     } else if(op == "eject") {
         eject.ejectCommand(tokens);
     } else if(op == "env") {
@@ -1701,9 +1755,20 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
     } else {
         // attempt to run external command
-        auto rc = system(cmd);
-        if(rc != 0) {
-            writeln("Unknown command: ", op);
+        if(auto p = op in hashedPaths) {
+            auto runCmd = *p ~ (tokens.length > 1 ? " " ~ tokens[1 .. $].join(" ") : "");
+            auto rc = system(runCmd);
+            if(rc != 0) {
+                writeln("Unknown command: ", op);
+            }
+        } else {
+            auto rc = system(cmd);
+            if(rc != 0) {
+                writeln("Unknown command: ", op);
+            } else {
+                auto fp = findInPath(op);
+                if(fp.length) hashedPaths[op] = fp;
+            }
         }
     }
 }
