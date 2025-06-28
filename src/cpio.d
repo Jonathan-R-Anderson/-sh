@@ -1,96 +1,110 @@
 module cpio;
 
 extern(C):
-
-// C headers
-import core.stdc.stdio : FILE, fopen, fclose, fread, fwrite, fseek, ftell, SEEK_SET, SEEK_END;
+import core.stdc.stdio : FILE, fopen, fread, fwrite, fclose, ftell, fseek, SEEK_SET;
 import core.stdc.stdlib : malloc, free;
-import core.stdc.string : memcmp;
-import core.stdc.time : time_t, time;
+import core.stdc.string : strlen, strcmp, memcmp;
 
-// Helpers
-uint hexToUint(const(char)* hex) {
-    uint result = 0;
-    foreach (i; 0 .. 8) {
-        result <<= 4;
+// Entry structure for extracted files
+struct Entry {
+    const(char)* name;
+    bool isDir;
+    ubyte* data;
+    uint size;
+}
+
+// Helper: convert 8-char hex string to uint
+int hexToUint(const(char)* hex) {
+    int val = 0;
+    for (int i = 0; i < 8; i++) {
+        val <<= 4;
         char c = hex[i];
-        if (c >= '0' && c <= '9') result |= cast(uint)(c - '0');
-        else if (c >= 'A' && c <= 'F') result |= cast(uint)(c - 'A' + 10);
+        if (c >= '0' && c <= '9') val += c - '0';
+        else if (c >= 'A' && c <= 'F') val += c - 'A' + 10;
     }
-    return result;
+    return val;
 }
 
-void pad(FILE* f) {
+// Helper: check if str starts with prefix
+bool startsWith(const(char)* str, const(char)* prefix) {
+    for (; *prefix; str++, prefix++) {
+        if (*str != *prefix) return false;
+    }
+    return true;
+}
+
+// Helper: align to 4 bytes
+void skipPad(FILE* f) {
     while ((ftell(f) % 4) != 0) {
-        static char zero = 0;
-        fwrite(&zero, 1, 1, f);
+        char discard;
+        fread(&discard, 1, 1, f);
     }
 }
 
-void writeHeader(FILE* f, const(char)* name, bool isDir, uint size) {
-    const char[7] magic = "070701";
-    fwrite(magic.ptr, 1, 6, f);
+// Read archive into array of entries
+int readArchive(const(char)* archive, Entry* outEntries, int maxEntries) {
+    FILE* f = fopen(archive, "rb");
+    if (!f) return 0;
 
-    uint[13] fields = [
-        0,                       // ino
-        isDir ? 0x41ED : 0x81A4, // mode
-        0, 0,                    // uid, gid
-        1,                       // nlink
-        cast(uint)time(null),   // mtime
-        size, 0, 0, 0, 0,        // size, devs
-        cast(uint)(strlen(name) + 1), // namesize
-        0                        // check
-    ];
+    int count = 0;
+    while (!feof(f) && count < maxEntries) {
+        char magic[7] = void;
+        fread(magic.ptr, 1, 6, f);
+        magic[6] = '\0';
+        if (memcmp(magic.ptr, "070701", 6) != 0) break;
 
-    foreach (field; fields) {
-        char[9] hex = void;
-        foreach_reverse (i; 0 .. 8) {
-            auto digit = field & 0xF;
-            hex[i] = cast(char)(digit < 10 ? digit + '0' : digit - 10 + 'A');
-            field >>= 4;
+        char header[105] = void;
+        fread(header.ptr, 1, 104, f);
+
+        uint fields[13];
+        for (int i = 0; i < 13; i++) {
+            fields[i] = hexToUint(header.ptr + (i * 8));
         }
-        fwrite(hex.ptr, 1, 8, f);
+
+        uint namesize = fields[11];
+        char* name = cast(char*)malloc(namesize);
+        fread(name, 1, namesize, f);
+        name[namesize - 1] = '\0';
+        skipPad(f);
+
+        if (strcmp(name, "TRAILER!!!") == 0) {
+            free(name);
+            break;
+        }
+
+        uint filesize = fields[6];
+        ubyte* buf = null;
+        if (filesize > 0) {
+            buf = cast(ubyte*)malloc(filesize);
+            fread(buf, 1, filesize, f);
+        }
+        skipPad(f);
+
+        outEntries[count].name = name;
+        outEntries[count].isDir = (fields[1] & 0x4000) != 0;
+        outEntries[count].data = buf;
+        outEntries[count].size = filesize;
+        count++;
     }
 
-    fwrite(name, 1, strlen(name) + 1, f);
-    pad(f);
-}
-
-void createArchive(const(char)* archive, const(char)** paths, int count) {
-    FILE* f = fopen(archive, "wb");
-    if (!f) return;
-
-    foreach (i; 0 .. count) {
-        const(char)* name = paths[i];
-
-        FILE* file = fopen(name, "rb");
-        bool isDir = (file is null);
-        uint size = 0;
-
-        if (!isDir) {
-            fseek(file, 0, SEEK_END);
-            size = cast(uint)ftell(file);
-            fseek(file, 0, SEEK_SET);
-        }
-
-        writeHeader(f, name, isDir, size);
-
-        if (!isDir) {
-            ubyte* buf = cast(ubyte*)malloc(size);
-            if (buf) {
-                fread(buf, 1, size, file);
-                fwrite(buf, 1, size, f);
-                free(buf);
-            }
-            fclose(file);
-        }
-        pad(f);
-    }
-
-    // Write trailer
-    const char[18] trailerName = "TRAILER!!!\0";
-    writeHeader(f, trailerName.ptr, false, 0);
     fclose(f);
+    return count;
 }
 
-extern (D) void main() {} // Stub entry point (or define your interface here)
+// Extract all files from archive to disk (requires basic libc I/O)
+void extractArchive(const(char)* archive) {
+    Entry[128] entries; // static array, adjust size as needed
+    int n = readArchive(archive, entries.ptr, 128);
+    for (int i = 0; i < n; i++) {
+        auto e = entries[i];
+        if (!e.isDir && e.data) {
+            FILE* f = fopen(e.name, "wb");
+            if (f) {
+                fwrite(e.data, 1, e.size, f);
+                fclose(f);
+            }
+        }
+        free(cast(void*)e.name);
+        if (e.data) free(e.data);
+    }
+}
