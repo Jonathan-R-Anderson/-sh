@@ -10,20 +10,20 @@ string[] formatParagraph(string para, size_t width)
 {
     auto words = para.split();
     string line;
-    string[] out;
+    string[] result;
     foreach(w; words) {
         if(line.length == 0) {
             line = w;
         } else if(line.length + 1 + w.length <= width) {
             line ~= " " ~ w;
         } else {
-            out ~= line;
+            result ~= line;
             line = w;
         }
     }
     if(line.length)
-        out ~= line;
-    return out;
+          result ~= line;
+    return result;
 }
 
 void processLines(string[] lines, size_t width, bool splitOnly, bool uniform)

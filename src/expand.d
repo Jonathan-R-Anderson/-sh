@@ -28,30 +28,30 @@ int spacesFor(size_t col, int[] stops) {
 }
 
 string expandLine(string line, int[] stops, bool initialOnly) {
-    auto out = appender!string();
+    auto builder = appender!string();
     size_t col = 0;
     bool initial = true;
     foreach(ch; line) {
         if(ch == '\b') {
-            out.put(ch);
+              builder.put(ch);
             if(col > 0) col--; 
             continue;
         }
         if(ch == '\t') {
             if(initialOnly && !initial) {
-                out.put(ch);
+                  builder.put(ch);
             } else {
                 int n = spacesFor(col, stops);
-                foreach(i; 0 .. n) out.put(' ');
+                  foreach(i; 0 .. n) builder.put(' ');
                 col += n;
             }
         } else {
-            out.put(ch);
+              builder.put(ch);
             col++;
             if(ch != ' ' && ch != '\t') initial = false;
         }
     }
-    return out.data;
+      return builder.data;
 }
 
 void expandFile(string name, int[] stops, bool initialOnly) {

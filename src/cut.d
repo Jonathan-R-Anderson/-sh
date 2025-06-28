@@ -46,13 +46,13 @@ bool inRanges(size_t idx, Range[] ranges) {
 }
 
 string cutBytes(string line, Range[] ranges) {
-    string out;
+    string result;
     size_t i = 1;
     foreach(ch; line) {
-        if(inRanges(i, ranges)) out ~= ch;
+        if(inRanges(i, ranges)) result ~= ch;
         i++;
     }
-    return out;
+    return result;
 }
 
 string cutFields(string line, Range[] ranges, char delim, bool onlyDelim, string outDelim) {
@@ -153,16 +153,16 @@ void cutCommand(string[] tokens) {
             string line;
             while((line = readln()) !is null) {
                 auto l = line.stripRight("\n");
-                auto out = processLine(l);
-                if(out.length || !onlyDelim)
-                    writeln(out);
+                auto resultLine = processLine(l);
+                if(resultLine.length || !onlyDelim)
+                    writeln(resultLine);
             }
         } else {
             try {
                 foreach(line; readText(f).splitLines) {
-                    auto out = processLine(line);
-                    if(out.length || !onlyDelim)
-                        writeln(out);
+                    auto resultLine = processLine(line);
+                    if(resultLine.length || !onlyDelim)
+                        writeln(resultLine);
                 }
             } catch(Exception) {
                 writeln("cut: cannot read ", f);

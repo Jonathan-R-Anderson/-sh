@@ -3,7 +3,7 @@ module cpio;
 import std.stdio;
 import std.file : read, write, dirEntries, SpanMode, mkdir, FileException,
                   isDir, getSize;
-import std.conv : to;
+import std.conv : to, octal;
 import std.path : baseName;
 import std.format : format;
 
@@ -103,7 +103,7 @@ void extractArchive(string archive) {
     auto entries = readArchive(archive);
     foreach(e; entries) {
         if(e.isDir) {
-            mkdir(e.name, 0755);
+            mkdir(e.name, octal!"755");
         } else {
             write(e.name, e.data);
         }
