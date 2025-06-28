@@ -5,6 +5,8 @@ import std.string;
 import std.conv : to;
 import std.array;
 import std.algorithm;
+import std.file : write, readText, exists;
+import md5sum : hexDigest;
 
 struct Object {
     string id;
@@ -77,6 +79,31 @@ string introspect(string obj) {
     return info;
 }
 
+static Object parseSnapshot(string snap) {
+    Object o;
+    foreach(part; snap.split(";")) {
+        if(part.length == 0) continue;
+        auto kv = part.split("=", 2);
+        auto key = kv[0];
+        auto val = kv.length > 1 ? kv[1] : "";
+        if(key.startsWith("prop:")) {
+            auto pkey = key[5 .. $];
+            o.props[pkey] = val;
+        } else if(key.startsWith("method:")) {
+            o.methods ~= val;
+        } else switch(key) {
+            case "id": o.id = val; break;
+            case "type": o.type = val; break;
+            case "parent": o.parent = val; break;
+            case "children": o.children = val.length ? val.split(",") : []; break;
+            case "sealed": o.sealed = val == "1"; break;
+            case "isolated": o.isolated = val == "1"; break;
+            default: break;
+        }
+    }
+    return o;
+}
+
 bool rename(string obj, string newId) {
     if(!(obj in registry) || (newId in registry)) return false;
     auto o = registry[obj];
@@ -123,7 +150,23 @@ string[] listMethods(string obj) {
 
 string callMethod(string obj, string method, string[] args) {
     if(obj !in registry) return "";
-    // placeholder method invocation
+    switch(method) {
+        case "getProp":
+            if(args.length > 0) return getProp(obj, args[0]);
+            break;
+        case "setProp":
+            if(args.length > 1)
+                return setProp(obj, args[0], args[1]) ? "true" : "false";
+            break;
+        case "listProps":
+            return listProps(obj).join(",");
+        case "listMethods":
+            return listMethods(obj).join(",");
+        case "getType":
+            return getType(obj);
+        default:
+            break;
+    }
     return obj ~ ":" ~ method ~ "(" ~ args.join(",") ~ ")";
 }
 
@@ -200,19 +243,40 @@ string[] getChildren(string obj) {
 }
 
 bool save(string obj, string path) {
-    // placeholder
+    if(obj !in registry) return false;
+    auto data = snapshot(obj);
+    write(path, data);
     return true;
 }
 
 string load(string path) {
-    return "";
+    if(!exists(path)) return "";
+    auto data = readText(path);
+    auto o = parseSnapshot(data);
+    if(o.id.length == 0)
+        o.id = o.type ~ "_" ~ to!string(counter++);
+    registry[o.id] = o;
+    return o.id;
 }
 
 string snapshot(string obj) {
-    return "snapshot" ~ obj;
+    if(obj !in registry) return "";
+    auto o = registry[obj];
+    string snap = "id=" ~ o.id ~ ";type=" ~ o.type;
+    foreach(k,v; o.props) snap ~= ";prop:" ~ k ~ "=" ~ v;
+    foreach(m; o.methods) snap ~= ";method:" ~ m;
+    if(o.parent.length) snap ~= ";parent=" ~ o.parent;
+    if(o.children.length) snap ~= ";children=" ~ o.children.join(",");
+    snap ~= ";sealed=" ~ (o.sealed ? "1" : "0");
+    snap ~= ";isolated=" ~ (o.isolated ? "1" : "0");
+    return snap;
 }
 
 bool restore(string obj, string snap) {
+    if(obj !in registry) return false;
+    auto o = parseSnapshot(snap);
+    o.id = obj;
+    registry[obj] = o;
     return true;
 }
 
@@ -232,6 +296,8 @@ bool seal(string obj) {
 }
 
 string verify(string obj) {
-    return "hash";
+    if(obj !in registry) return "";
+    auto data = cast(const(ubyte)[])snapshot(obj);
+    return hexDigest(data);
 }
 
