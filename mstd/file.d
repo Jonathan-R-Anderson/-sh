@@ -98,7 +98,7 @@ void copy(string src, string dst)
 
 void rename(string src, string dst)
 {
-    import core.sys.posix.unistd : rename as posix_rename;
+    import core.sys.posix.unistd : posix_rename = rename;
     posix_rename(src.toStringz(), dst.toStringz());
 }
 
