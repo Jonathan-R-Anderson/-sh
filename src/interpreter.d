@@ -6,8 +6,10 @@ import std.parallelism;
 import std.range;
 import std.file : chdir, getcwd, dirEntries, SpanMode, readText,
     copy, rename, remove, mkdir, rmdir, exists;
-import std.process : system, environment;
-version(Posix) import core.sys.posix.unistd : chroot, execvp;
+import std.process : environment;
+import core.stdc.stdlib : system;
+version(Posix) import core.sys.posix.unistd : execvp;
+version(Posix) extern(C) int chroot(const char* path);
 import std.regex : regex, matchFirst;
 import std.path : globMatch;
 import std.conv : to;
