@@ -70,6 +70,10 @@ import importcmd;
 import install;
 import iostat;
 import ip;
+import join;
+import kill;
+import killall;
+import klist;
 
 string[] history;
 string[string] aliases;
@@ -98,7 +102,7 @@ string[] builtinNames = [
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
     "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "getfacl", "groupadd", "groupdel", "groupmod", "groups", "gzip", "hash", "head",
-    "help", "history", "iconv", "id", "if", "ifconfig", "ifdown", "ifup", "import", "install", "iostat", "ip", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
+    "help", "history", "iconv", "id", "if", "ifconfig", "ifdown", "ifup", "import", "install", "iostat", "ip", "jobs", "join", "kill", "killall", "klist", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
 
@@ -1778,6 +1782,14 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             auto status = job.running ? "Running" : "Done";
             writeln("[", job.id, "]\t", status, "\t", job.cmd);
         }
+    } else if(op == "join") {
+        join.joinCommand(tokens);
+    } else if(op == "kill") {
+        kill.killCommand(tokens);
+    } else if(op == "killall") {
+        killall.killallCommand(tokens);
+    } else if(op == "klist") {
+        klist.klistCommand(tokens);
     } else if(op == "apt" || op == "apt-get") {
         auto rc = system(cmd);
         if(rc != 0) {
