@@ -568,20 +568,20 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             bool blank = line.length == 0;
             if(showTabs) replace(line, "\t", "^I");
             if(showNonPrint) {
-                string out;
+                string outStr;
                 foreach(dchar c; line) {
-                    if(c == '\t' || c == '\n') out ~= cast(char)c;
-                    else if(c < 32) out ~= "^" ~ cast(char)(c + 64);
-                    else if(c == 127) out ~= "^?";
+                    if(c == '\t' || c == '\n') outStr ~= cast(char)c;
+                    else if(c < 32) outStr ~= "^" ~ cast(char)(c + 64);
+                    else if(c == 127) outStr ~= "^?";
                     else if(c > 127) {
                         auto code = c - 128;
-                        out ~= "M-";
-                        if(code < 32) out ~= "^" ~ cast(char)(code + 64);
-                        else if(code == 127) out ~= "^?";
-                        else out ~= cast(char)code;
-                    } else out ~= cast(char)c;
+                        outStr ~= "M-";
+                        if(code < 32) outStr ~= "^" ~ cast(char)(code + 64);
+                        else if(code == 127) outStr ~= "^?";
+                        else outStr ~= cast(char)code;
+                    } else outStr ~= cast(char)c;
                 }
-                line = out;
+                line = outStr;
             }
             if(showEnds) line ~= "$";
             if(squeezeBlank) {
@@ -855,8 +855,6 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         auto dir = std.path.dirName(path);
         if(dir.length == 0) dir = ".";
         writeln(dir);
-    }
-    
     } else if(op == "animal_case") {
         string animal;
         if(tokens.length >= 2) {

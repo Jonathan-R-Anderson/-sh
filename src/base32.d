@@ -7,7 +7,7 @@ immutable string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
 string base32Encode(const(ubyte)[] data, size_t wrap = 76)
 {
-    auto out = appender!string();
+    auto result = appender!string();
     uint buffer = 0;
     int bits = 0;
     size_t line = 0;
@@ -16,11 +16,11 @@ string base32Encode(const(ubyte)[] data, size_t wrap = 76)
         bits += 8;
         while(bits >= 5) {
             auto idx = (buffer >> (bits - 5)) & 31;
-            out.put(alphabet[idx]);
+            result.put(alphabet[idx]);
             bits -= 5;
             line++;
             if(wrap > 0 && line >= wrap) {
-                out.put('\n');
+                result.put('\n');
                 line = 0;
             }
         }
@@ -28,22 +28,22 @@ string base32Encode(const(ubyte)[] data, size_t wrap = 76)
     if(bits > 0) {
         buffer <<= (5 - bits);
         auto idx = buffer & 31;
-        out.put(alphabet[idx]);
+        result.put(alphabet[idx]);
         line++;
         if(wrap > 0 && line >= wrap) {
-            out.put('\n');
+            result.put('\n');
             line = 0;
         }
     }
     while(line % 8 != 0) {
-        out.put('=');
+        result.put('=');
         line++;
         if(wrap > 0 && line >= wrap) {
-            out.put('\n');
+            result.put('\n');
             line = 0;
         }
     }
-    return out.data;
+    return result.data;
 }
 
 ubyte[] base32Decode(string data, bool ignoreGarbage = false)
@@ -55,7 +55,7 @@ ubyte[] base32Decode(string data, bool ignoreGarbage = false)
         map[cast(ubyte)toLower(ch)] = i;
     }
 
-    auto out = appender!(ubyte[])();
+    auto result = appender!(ubyte[])();
     uint buffer = 0;
     int bits = 0;
     foreach(ch; data) {
@@ -74,9 +74,9 @@ ubyte[] base32Decode(string data, bool ignoreGarbage = false)
         bits += 5;
         if(bits >= 8) {
             auto byte = (buffer >> (bits - 8)) & 0xFF;
-            out.put(cast(ubyte)byte);
+            result.put(cast(ubyte)byte);
             bits -= 8;
         }
     }
-    return out.data;
+    return result.data;
 }
