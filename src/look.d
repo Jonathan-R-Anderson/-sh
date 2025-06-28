@@ -2,7 +2,8 @@ module look;
 
 import std.stdio;
 import std.string : toLower, strip;
-import std.file : readText, File;
+import std.file : readText;
+import std.stdio : File;
 import std.algorithm : filter;
 import std.ascii : isAlphaNum;
 

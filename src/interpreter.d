@@ -6,7 +6,7 @@ import std.parallelism;
 import std.range;
 import std.file : chdir, getcwd, dirEntries, SpanMode, readText,
     copy, rename, remove, mkdir, rmdir, exists;
-import core.stdc.stdlib : system, environment;
+import std.process : system, environment;
 version(Posix) import core.sys.posix.unistd : chroot, execvp;
 import std.regex : regex, matchFirst;
 import std.path : globMatch;
