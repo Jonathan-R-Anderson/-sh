@@ -2,8 +2,8 @@ module crontab;
 
 import std.stdio;
 import std.file : readText, write, exists, remove;
-import std.process : environment;
-import core.stdc.stdlib : system;
+import std.process : environment, system;
+import std.string : startsWith;
 
 void editFile(string path)
 {

@@ -1,9 +1,12 @@
-import dlexer; 
-import dparser; 
-import std.regex : regex; 
+module example;
+
+import dlexer;
+import dparser;
+import std.regex : regex;
 import std.stdio;
 
-void main(string[] args) {
+/// Run the arithmetic parser example.
+void exampleMain(string[] args) {
     if (args.length < 2) {
         writeln("Usage: example \"1 + 2 * 3\"");
         return;
