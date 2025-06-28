@@ -34,7 +34,6 @@ class BCParser {
             final switch(op.type) {
                 case "PLUS":  value += rhs; break;
                 case "MINUS": value -= rhs; break;
-                default: break;
             }
         }
         return value;
@@ -48,7 +47,6 @@ class BCParser {
             final switch(op.type) {
                 case "TIMES":  value *= rhs; break;
                 case "DIVIDE": value /= rhs; break;
-                default: break;
             }
         }
         return value;

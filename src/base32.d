@@ -51,8 +51,8 @@ ubyte[] base32Decode(string data, bool ignoreGarbage = false)
     int[256] map;
     map[] = -1;
     foreach(i, ch; alphabet) {
-        map[cast(ubyte)ch] = i;
-        map[cast(ubyte)toLower(ch)] = i;
+        map[cast(ubyte)ch] = cast(int)i;
+        map[cast(ubyte)toLower(ch)] = cast(int)i;
     }
 
     auto result = appender!(ubyte[])();
