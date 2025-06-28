@@ -3,7 +3,7 @@ module cron;
 import std.stdio;
 import std.file : readText, exists;
 import std.datetime : Clock, SysTime;
-import std.process : system;
+import core.stdc.stdlib : system;
 import std.conv : to;
 import std.algorithm : splitter;
 import core.thread : Thread;

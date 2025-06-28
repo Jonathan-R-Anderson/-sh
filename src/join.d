@@ -2,7 +2,7 @@ module join;
 
 import std.stdio;
 import std.string : join;
-import std.process : system;
+import core.stdc.stdlib : system;
 
 /// Execute the system join command with the provided arguments.
 void joinCommand(string[] tokens)

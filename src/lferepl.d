@@ -15,7 +15,7 @@ import std.parallelism;
 import cpio : createArchive, extractArchive;
 import core.sync.mutex : Mutex;
 import core.sync.condition : Condition;
-import std.process : system;
+import core.stdc.stdlib : system;
 version(Posix) import core.sys.posix.unistd : execvp;
 import objectsystem;
 import local;

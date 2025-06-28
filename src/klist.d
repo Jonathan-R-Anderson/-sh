@@ -2,7 +2,7 @@ module klist;
 
 import std.stdio;
 import std.string : join;
-import std.process : system;
+import core.stdc.stdlib : system;
 
 /// Execute the system klist command with the provided arguments.
 void klistCommand(string[] tokens)

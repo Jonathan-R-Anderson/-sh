@@ -2,7 +2,7 @@ module groupadd;
 
 import std.stdio;
 import std.string : join;
-import std.process : system;
+import core.stdc.stdlib : system;
 
 /// Execute the system groupadd command with the provided arguments.
 void groupaddCommand(string[] tokens)
