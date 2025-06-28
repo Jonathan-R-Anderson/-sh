@@ -5,7 +5,7 @@ import std.file : readText;
 import std.string : splitLines, strip, join;
 import std.algorithm : filter, map;
 
-immutable string defaultDB = q{
+immutable string defaultDB = q"EOF"
 # Default color database
 DIR 01;34
 LINK 01;36
@@ -15,7 +15,7 @@ BLK 40;33;01
 CHR 40;33;01
 ORPHAN 40;31;01
 EXEC 01;32
-};
+EOF";
 
 string loadDB(string name)
 {
