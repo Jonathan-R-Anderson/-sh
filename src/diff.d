@@ -1,10 +1,10 @@
 module diff;
 
-import std.stdio;
-import std.file : readText;
-import std.string : splitLines, toLower, strip, join, split;
-import std.algorithm : max;
-import std.array : array;
+import mstd.stdio;
+import mstd.file : readText;
+import mstd.string : splitLines, toLower, strip, join, split;
+import mstd.algorithm : max;
+import mstd.array : array;
 
 struct DiffOp {
     char tag; // ' ' for same, '-' removed from first, '+' added in second

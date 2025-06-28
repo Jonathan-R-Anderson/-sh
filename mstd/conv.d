@@ -1,4 +1,4 @@
-module std.conv;
+module mstd.conv;
 
 import core.stdc.stdlib : atoi, strtol, strtoll, strtod;
 import core.stdc.stdio : sprintf;

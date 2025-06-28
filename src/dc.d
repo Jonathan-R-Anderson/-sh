@@ -1,8 +1,8 @@
 module dc;
 
 import std.bigint : BigInt;
-import std.conv : to;
-import std.string : split, strip;
+import mstd.conv : to;
+import mstd.string : split, strip;
 
 string dcEval(string expr) {
     BigInt[] stack;

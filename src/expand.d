@@ -1,11 +1,11 @@
 module expand;
 
-import std.stdio;
-import std.file : readText;
-import std.string : split, replace, splitLines;
-import std.conv : to;
-import std.array : appender, Appender;
-import std.ascii : isDigit;
+import mstd.stdio;
+import mstd.file : readText;
+import mstd.string : split, replace, splitLines;
+import mstd.conv : to;
+import mstd.array : appender, Appender;
+import mstd.ascii : isDigit;
 
 int[] parseStops(string spec) {
     spec = replace(spec, ",", " ");

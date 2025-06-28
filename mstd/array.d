@@ -1,4 +1,4 @@
-module std.array;
+module mstd.array;
 
 // Minimal implementations of selected std.array utilities.
 

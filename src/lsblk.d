@@ -1,10 +1,10 @@
 module lsblk;
 
-import std.stdio;
-import std.file : dirEntries, readText, exists, SpanMode;
-import std.string : strip;
-import std.algorithm : sort;
-import std.conv : to;
+import mstd.stdio;
+import mstd.file : dirEntries, readText, exists, SpanMode;
+import mstd.string : strip;
+import mstd.algorithm : sort;
+import mstd.conv : to;
 import df : humanSize;
 
 void lsblkCommand(string[] tokens)

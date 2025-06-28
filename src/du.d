@@ -1,10 +1,10 @@
 module du;
 
-import std.stdio;
-import std.file : dirEntries, DirEntry, SpanMode;
-import std.conv : to;
-import std.path : buildNormalizedPath;
-import std.format : format;
+import mstd.stdio;
+import mstd.file : dirEntries, DirEntry, SpanMode;
+import mstd.conv : to;
+import mstd.path : buildNormalizedPath;
+import mstd.format : format;
 
 struct Options {
     bool human;

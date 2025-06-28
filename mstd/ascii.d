@@ -1,4 +1,4 @@
-module std.ascii;
+module mstd.ascii;
 
 /// Returns true if the character is alphanumeric.
 bool isAlphaNum(dchar c)

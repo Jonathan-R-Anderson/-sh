@@ -1,10 +1,10 @@
 module fmt;
 
-import std.stdio;
-import std.string : split, splitLines, strip, join;
-import std.file : readText;
-import std.conv : to;
-import std.ascii : isDigit;
+import mstd.stdio;
+import mstd.string : split, splitLines, strip, join;
+import mstd.file : readText;
+import mstd.conv : to;
+import mstd.ascii : isDigit;
 
 string[] formatParagraph(string para, size_t width)
 {

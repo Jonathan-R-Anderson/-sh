@@ -1,7 +1,7 @@
 module kill;
 
-import std.stdio;
-import std.string : join;
+import mstd.stdio;
+import mstd.string : join;
 import core.stdc.stdlib : system;
 
 /// Execute the system kill command with the provided arguments.

@@ -1,8 +1,8 @@
 module comm;
 
-import std.stdio;
-import std.file : readText;
-import std.string : splitLines;
+import mstd.stdio;
+import mstd.file : readText;
+import mstd.string : splitLines;
 
 string[] readLines(string name)
 {

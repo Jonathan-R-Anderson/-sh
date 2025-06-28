@@ -1,7 +1,7 @@
 module base64;
 
-import std.array : appender, Appender;
-import std.string : toLower;
+import mstd.array : appender, Appender;
+import mstd.string : toLower;
 
 immutable string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

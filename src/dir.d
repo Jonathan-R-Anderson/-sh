@@ -1,9 +1,9 @@
 module dir;
 
-import std.stdio;
-import std.file : dirEntries, SpanMode;
-import std.algorithm : sort;
-import std.format : format;
+import mstd.stdio;
+import mstd.file : dirEntries, SpanMode;
+import mstd.algorithm : sort;
+import mstd.format : format;
 
 string escapeName(string name)
 {

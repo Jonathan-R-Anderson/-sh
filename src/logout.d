@@ -1,7 +1,7 @@
 module logout;
 
-import std.stdio;
-import std.conv : to;
+import mstd.stdio;
+import mstd.conv : to;
 import core.stdc.stdlib : exit;
 
 /// Terminate the shell session.

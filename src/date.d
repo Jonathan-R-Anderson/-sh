@@ -1,9 +1,9 @@
 module date;
 
-import std.stdio;
-import std.datetime : Clock, SysTime, DateTime;
-import std.conv : to;
-import std.string : split;
+import mstd.stdio;
+import mstd.datetime : Clock, SysTime, DateTime;
+import mstd.conv : to;
+import mstd.string : split;
 
 SysTime parseDateString(string s) {
     try {

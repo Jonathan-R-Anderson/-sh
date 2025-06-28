@@ -1,9 +1,9 @@
 module lsof;
 
-import std.stdio;
-import std.file : dirEntries, readLink, readText, SpanMode;
-import std.string : strip;
-import std.algorithm : sort;
+import mstd.stdio;
+import mstd.file : dirEntries, readLink, readText, SpanMode;
+import mstd.string : strip;
+import mstd.algorithm : sort;
 
 bool isNumeric(string s) {
     foreach(ch; s) if(ch < '0' || ch > '9') return false; 

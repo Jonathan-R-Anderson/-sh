@@ -1,6 +1,6 @@
 module linkcmd;
 
-import std.stdio;
+import mstd.stdio;
 import core.sys.posix.unistd : link;
 
 /// Create a hard link.

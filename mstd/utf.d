@@ -1,4 +1,4 @@
-module std.utf;
+module mstd.utf;
 
 string toUTF8(string s)
 {

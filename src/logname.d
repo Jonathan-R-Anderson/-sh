@@ -1,7 +1,7 @@
 module logname;
 
-import std.stdio;
-import std.process : environment;
+import mstd.stdio;
+import mstd.process : environment;
 
 /// Print the current login name.
 void lognameCommand(string[] tokens)

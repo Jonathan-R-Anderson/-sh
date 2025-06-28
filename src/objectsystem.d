@@ -1,11 +1,11 @@
 module objectsystem;
 
-import std.stdio;
-import std.string;
-import std.conv : to;
-import std.array;
-import std.algorithm;
-import std.file : write, readText, exists;
+import mstd.stdio;
+import mstd.string;
+import mstd.conv : to;
+import mstd.array;
+import mstd.algorithm;
+import mstd.file : write, readText, exists;
 import md5sum : hexDigest;
 
 struct Object {

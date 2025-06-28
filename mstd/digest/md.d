@@ -1,4 +1,4 @@
-module std.digest.md;
+module mstd.digest.md;
 
 // Minimal MD5 implementation in D based on RFC 1321.
 import core.stdc.string : memcpy;
