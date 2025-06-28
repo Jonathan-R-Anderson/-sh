@@ -1,122 +1,96 @@
 module cpio;
 
-import std.stdio;
-import std.file : read, write, dirEntries, SpanMode, mkdir, FileException,
-                  isDir, getSize;
-import std.conv : to, octal;
-import std.path : baseName;
-import std.format : format;
-import std.datetime : Clock;
+extern(C):
 
-struct Header {
-    uint ino;
-    uint mode;
-    uint uid;
-    uint gid;
-    uint nlink;
-    uint mtime;
-    uint filesize;
-    uint devmajor;
-    uint devminor;
-    uint rdevmajor;
-    uint rdevminor;
-    uint namesize;
-}
+// C headers
+import core.stdc.stdio : FILE, fopen, fclose, fread, fwrite, fseek, ftell, SEEK_SET, SEEK_END;
+import core.stdc.stdlib : malloc, free;
+import core.stdc.string : memcmp;
+import core.stdc.time : time_t, time;
 
-void writeHeader(File f, string name, bool dir, ulong size) {
-    Header h;
-    h.ino = 0;
-    h.mode = dir ? 0x41ED : 0x81A4;
-    h.uid = 0;
-    h.gid = 0;
-    h.nlink = 1;
-    h.mtime = cast(uint)Clock.currTime.toUnixTime;
-    h.filesize = cast(uint)size;
-    h.devmajor = 0;
-    h.devminor = 0;
-    h.rdevmajor = 0;
-    h.rdevminor = 0;
-    h.namesize = cast(uint)(name.length + 1);
-    f.write("070701");
-    foreach(field; [h.ino, h.mode, h.uid, h.gid, h.nlink, h.mtime,
-                    h.filesize, h.devmajor, h.devminor, h.rdevmajor,
-                    h.rdevminor, h.namesize, 0u])
-    {
-        f.write(format("%08X", field));
+// Helpers
+uint hexToUint(const(char)* hex) {
+    uint result = 0;
+    foreach (i; 0 .. 8) {
+        result <<= 4;
+        char c = hex[i];
+        if (c >= '0' && c <= '9') result |= cast(uint)(c - '0');
+        else if (c >= 'A' && c <= 'F') result |= cast(uint)(c - 'A' + 10);
     }
-    f.write(name);
-    f.write('\0');
-    while((f.tell % 4) != 0) f.write('\0');
+    return result;
 }
 
-void createArchive(string archive, string[] files) {
-    auto fout = File(archive, "wb");
-    foreach(path; files) {
-        bool dir = isDir(path);
-        auto name = baseName(path);
-        ulong size = dir ? 0 : getSize(path);
-        writeHeader(fout, name, dir, size);
-        if(!dir)
-            fout.rawWrite(read(path));
-        while((fout.tell % 4) != 0) fout.write('\0');
+void pad(FILE* f) {
+    while ((ftell(f) % 4) != 0) {
+        static char zero = 0;
+        fwrite(&zero, 1, 1, f);
     }
-    // trailer
-    fout.write("07070100000000000000000000000000000000000000000000000000000000000000000000000B00000000TRAILER!!!\0");
-    while((fout.tell % 4) != 0) fout.write('\0');
-    fout.close();
 }
 
-struct Entry {
-    string name;
-    bool isDir;
-    ubyte[] data;
-}
+void writeHeader(FILE* f, const(char)* name, bool isDir, uint size) {
+    const char[7] magic = "070701";
+    fwrite(magic.ptr, 1, 6, f);
 
-Entry[] readArchive(string archive) {
-    Entry[] entries;
-    auto f = File(archive, "rb");
-    ubyte[] tmp;
-    while(!f.eof) {
-        tmp.length = 6;
-        auto readLen = f.rawRead(tmp);
-        auto magic = cast(string)tmp[0 .. readLen].idup;
-        if(magic.length == 0) break;
-        tmp.length = 104;
-        readLen = f.rawRead(tmp);
-        auto rest = cast(string)tmp[0 .. readLen].idup;
-        if(magic != "070701") break;
-        uint[13] fields;
-        foreach(i; 0..13) {
-            auto hex = rest[i*8 .. i*8+8];
-            fields[i] = to!uint("0x" ~ hex);
+    uint[13] fields = [
+        0,                       // ino
+        isDir ? 0x41ED : 0x81A4, // mode
+        0, 0,                    // uid, gid
+        1,                       // nlink
+        cast(uint)time(null),   // mtime
+        size, 0, 0, 0, 0,        // size, devs
+        cast(uint)(strlen(name) + 1), // namesize
+        0                        // check
+    ];
+
+    foreach (field; fields) {
+        char[9] hex = void;
+        foreach_reverse (i; 0 .. 8) {
+            auto digit = field & 0xF;
+            hex[i] = cast(char)(digit < 10 ? digit + '0' : digit - 10 + 'A');
+            field >>= 4;
         }
-        auto namesize = fields[11];
-        tmp.length = namesize;
-        readLen = f.rawRead(tmp);
-        auto fname = cast(string)tmp[0 .. readLen].idup;
-        fname = fname[0 .. $-1];
-        while((f.tell % 4) != 0) { tmp.length = 1; f.rawRead(tmp); }
-        auto filesize = fields[6];
-        ubyte[] content;
-        if(filesize > 0) {
-            content.length = filesize;
-            f.rawRead(content);
-        }
-        while((f.tell % 4) != 0) { tmp.length = 1; f.rawRead(tmp); }
-        if(fname == "TRAILER!!!") break;
-        entries ~= Entry(fname, (fields[2] & 0x4000) != 0, content);
+        fwrite(hex.ptr, 1, 8, f);
     }
-    f.close();
-    return entries;
+
+    fwrite(name, 1, strlen(name) + 1, f);
+    pad(f);
 }
 
-void extractArchive(string archive) {
-    auto entries = readArchive(archive);
-    foreach(e; entries) {
-        if(e.isDir) {
-            mkdir(e.name, octal!"755");
-        } else {
-            write(e.name, e.data);
+void createArchive(const(char)* archive, const(char)** paths, int count) {
+    FILE* f = fopen(archive, "wb");
+    if (!f) return;
+
+    foreach (i; 0 .. count) {
+        const(char)* name = paths[i];
+
+        FILE* file = fopen(name, "rb");
+        bool isDir = (file is null);
+        uint size = 0;
+
+        if (!isDir) {
+            fseek(file, 0, SEEK_END);
+            size = cast(uint)ftell(file);
+            fseek(file, 0, SEEK_SET);
         }
+
+        writeHeader(f, name, isDir, size);
+
+        if (!isDir) {
+            ubyte* buf = cast(ubyte*)malloc(size);
+            if (buf) {
+                fread(buf, 1, size, file);
+                fwrite(buf, 1, size, f);
+                free(buf);
+            }
+            fclose(file);
+        }
+        pad(f);
     }
+
+    // Write trailer
+    const char[18] trailerName = "TRAILER!!!\0";
+    writeHeader(f, trailerName.ptr, false, 0);
+    fclose(f);
 }
+
+extern (D) void main() {} // Stub entry point (or define your interface here)

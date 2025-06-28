@@ -88,7 +88,8 @@ void runCron(string path) {
                    job.dom[now.day] &&
                    job.months[now.month] &&
                    job.dow[now.dayOfWeek]) {
-                    system(job.cmd);
+                   import core.stdc.string : toStringz;
+                   system(job.cmd.toStringz);
                 }
             }
         }
