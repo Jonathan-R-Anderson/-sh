@@ -15,7 +15,8 @@ BLK 40;33;01
 CHR 40;33;01
 ORPHAN 40;31;01
 EXEC 01;32
-EOF";
+EOF"
+;
 
 string loadDB(string name)
 {
