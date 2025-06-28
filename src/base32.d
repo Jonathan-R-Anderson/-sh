@@ -1,7 +1,7 @@
 module base32;
 
-import std.array : appender, Appender;
-import std.string : toLower;
+import mstd.array : appender, Appender;
+import mstd.string : toLower;
 
 immutable string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 

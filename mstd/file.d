@@ -1,4 +1,4 @@
-module std.file;
+module mstd.file;
 
 // Import POSIX filesystem helpers.  Alias `getcwd` to avoid colliding with the
 // wrapper function defined below.

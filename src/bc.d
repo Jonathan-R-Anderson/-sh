@@ -1,11 +1,11 @@
 module bc;
 
 import dlexer;
-import std.regex : regex;
-import std.array : array;
-import std.algorithm : filter;
+import mstd.regex : regex;
+import mstd.array : array;
+import mstd.algorithm : filter;
 import std.bigint : BigInt;
-import std.conv : to;
+import mstd.conv : to;
 
 class BCParser {
     Token[] tokens;

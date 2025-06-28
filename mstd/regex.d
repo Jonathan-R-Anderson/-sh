@@ -1,6 +1,6 @@
-module std.regex;
+module mstd.regex;
 
-import std.string : toLower, indexOf;
+import mstd.string : toLower, indexOf;
 
 /// Simple lightweight regex replacement used for ``betterC`` builds.
 ///

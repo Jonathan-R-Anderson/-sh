@@ -1,4 +1,4 @@
-module std.string;
+module mstd.string;
 
 import core.stdc.string : strlen, memcpy, memcmp, strcmp, strcasecmp;
 

@@ -1,4 +1,4 @@
-module std.datetime;
+module mstd.datetime;
 
 import core.stdc.time;
 

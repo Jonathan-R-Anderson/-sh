@@ -1,10 +1,10 @@
 module chkconfig;
 
-import std.stdio;
-import std.string;
-import std.file : exists, readText, dirEntries, SpanMode, symlink, remove;
-import std.path : baseName;
-import std.conv : to;
+import mstd.stdio;
+import mstd.string;
+import mstd.file : exists, readText, dirEntries, SpanMode, symlink, remove;
+import mstd.path : baseName;
+import mstd.conv : to;
 
 bool serviceEnabled(string name, int level) {
     string dir = "/etc/rc" ~ to!string(level) ~ ".d";

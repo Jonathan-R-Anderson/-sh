@@ -1,8 +1,8 @@
 module dparser;
 
-import std.stdio;
-import std.array : array;
-import std.algorithm;
+import mstd.stdio;
+import mstd.array : array;
+import mstd.algorithm;
 import dlexer;
 
 alias Action = long delegate(long, long);

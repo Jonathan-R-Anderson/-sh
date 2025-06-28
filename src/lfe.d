@@ -2,9 +2,9 @@ module lfe;
 
 import dlexer;
 import dparser;
-import std.regex : regex;
-import std.stdio;
-import std.string;
+import mstd.regex : regex;
+import mstd.stdio;
+import mstd.string;
 
 struct Expr {
     bool isList;

@@ -1,6 +1,6 @@
 module local;
 
-import std.stdio;
+import mstd.stdio;
 
 /// Minimal local implementation - assigns variables in the global map.
 extern (C) {

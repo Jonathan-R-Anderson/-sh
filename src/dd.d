@@ -1,9 +1,9 @@
 module dd;
 
-import std.stdio;
-import std.file : exists;
-import std.conv : to;
-import std.string : split, indexOf, endsWith;
+import mstd.stdio;
+import mstd.file : exists;
+import mstd.conv : to;
+import mstd.string : split, indexOf, endsWith;
 
 size_t parseBytes(string s)
 {

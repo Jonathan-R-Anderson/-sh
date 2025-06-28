@@ -1,9 +1,9 @@
 module dircolors;
 
-import std.stdio;
-import std.file : readText;
-import std.string : splitLines, strip, join;
-import std.algorithm : filter, map;
+import mstd.stdio;
+import mstd.file : readText;
+import mstd.string : splitLines, strip, join;
+import mstd.algorithm : filter, map;
 
 immutable string defaultDB = `
 # Default color database

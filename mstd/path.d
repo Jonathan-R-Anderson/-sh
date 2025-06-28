@@ -1,6 +1,6 @@
-module std.path;
+module mstd.path;
 
-import std.string : split, join;
+import mstd.string : split, join;
 
 string baseName(string path)
 {

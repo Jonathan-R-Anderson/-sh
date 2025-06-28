@@ -1,11 +1,11 @@
 module csplit;
 
-import std.stdio;
-import std.file : readText, write;
-import std.string : splitLines, join, indexOf;
-import std.regex : regex, matchFirst;
-import std.conv : to;
-import std.format : format;
+import mstd.stdio;
+import mstd.file : readText, write;
+import mstd.string : splitLines, join, indexOf;
+import mstd.regex : regex, matchFirst;
+import mstd.conv : to;
+import mstd.format : format;
 
 struct Pattern {
     bool isRegex;

@@ -1,4 +1,4 @@
-module std.range;
+module mstd.range;
 
 struct Iota
 {

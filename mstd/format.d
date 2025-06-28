@@ -1,4 +1,4 @@
-module std.format;
+module mstd.format;
 
 import core.stdc.stdio : vsnprintf;
 import core.stdc.stdarg;

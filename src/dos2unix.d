@@ -1,8 +1,8 @@
 module dos2unix;
 
-import std.stdio;
-import std.file : readText, write;
-import std.string : replace;
+import mstd.stdio;
+import mstd.file : readText, write;
+import mstd.string : replace;
 
 void convertFile(string inFile, string outFile, bool keepDate, bool quiet)
 {

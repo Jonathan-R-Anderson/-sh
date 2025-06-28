@@ -1,4 +1,4 @@
-module std.stdio;
+module mstd.stdio;
 
 import core.stdc.stdio;
 

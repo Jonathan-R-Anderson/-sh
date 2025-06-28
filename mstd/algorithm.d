@@ -1,4 +1,4 @@
-module std.algorithm;
+module mstd.algorithm;
 
 // Minimal implementations of selected std.algorithm utilities used in this project.
 
