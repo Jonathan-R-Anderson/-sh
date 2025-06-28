@@ -9,7 +9,7 @@ The implementation is intentionally small and demonstrates how one might begin t
 A D compiler such as `dmd` or `ldc2` is required. To cross compile for a specific target, supply the desired architecture flags to the compiler. For example:
 
 ```bash
-ldc2 -mtriple=<target> src/*.d -of=interpreter
+ldc2 -betterC --nodefaultlib -I=std -I=src -mtriple=<target> src/*.d -of=interpreter
 ```
 
 Replace `<target>` with the appropriate triple for the operating system described in the `internetcomputer` repository.

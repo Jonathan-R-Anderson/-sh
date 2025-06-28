@@ -48,15 +48,15 @@ int readArchive(const(char)* archive, Entry* outEntries, int maxEntries) {
 
     int count = 0;
     while (!feof(f) && count < maxEntries) {
-        char magic[7] = void;
+        char[7] magic = void;
         fread(magic.ptr, 1, 6, f);
         magic[6] = '\0';
         if (memcmp(magic.ptr, "070701", 6) != 0) break;
 
-        char header[105] = void;
+        char[105] header = void;
         fread(header.ptr, 1, 104, f);
 
-        uint fields[13];
+        uint[13] fields;
         for (int i = 0; i < 13; i++) {
             fields[i] = hexToUint(header.ptr + (i * 8));
         }

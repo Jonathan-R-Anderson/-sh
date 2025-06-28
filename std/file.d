@@ -2,7 +2,7 @@ module std.file;
 
 // Import POSIX filesystem helpers.  Alias `getcwd` to avoid colliding with the
 // wrapper function defined below.
-import core.sys.posix.unistd : chdir, posix_getcwd = getcwd, symlink, readlink, unlink;
+public import core.sys.posix.unistd : chdir, posix_getcwd = getcwd, symlink, readlink, unlink;
 import core.sys.posix.dirent : DIR, dirent, opendir, readdir, closedir;
 import core.sys.posix.fcntl : open, O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, O_APPEND;
 import core.sys.posix.sys.stat : stat, lstat, S_IFDIR, S_IFREG;
@@ -115,4 +115,3 @@ string readLink(string path)
     return buf[0 .. len].idup;
 }
 
-alias symlink = symlink;
