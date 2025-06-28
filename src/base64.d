@@ -73,8 +73,8 @@ ubyte[] base64Decode(string data, bool ignoreGarbage = false)
         buffer = (buffer << 6) | cast(uint)idx;
         bits += 6;
         if(bits >= 8) {
-            auto byte = (buffer >> (bits - 8)) & 0xFF;
-            result.put(cast(ubyte)byte);
+            auto bval = (buffer >> (bits - 8)) & 0xFF;
+            result.put(cast(ubyte)bval);
             bits -= 8;
         }
     }

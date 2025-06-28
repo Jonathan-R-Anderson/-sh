@@ -31,9 +31,9 @@ bool isSorted(string[] arr)
 
 string repeatDelim(string d, int n)
 {
-    string out;
-    foreach(i; 0 .. n) out ~= d;
-    return out;
+    string result;
+    foreach(i; 0 .. n) result ~= d;
+    return result;
 }
 
 void commFiles(string f1, string f2, bool s1=false, bool s2=false, bool s3=false,
