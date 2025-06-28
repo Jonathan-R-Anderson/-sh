@@ -876,7 +876,8 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
                 return;
         }
         writeln("The ", animal, " has ", legs, " legs.");
-    } else if(op == "base64") {
+    }
+    else if(op == "base64") {
         bool decode = false;
         bool ignore = false;
         size_t wrapLen = 76;
