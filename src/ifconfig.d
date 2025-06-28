@@ -2,7 +2,7 @@ module ifconfig;
 
 import std.stdio;
 import std.string : join;
-import std.process : system;
+import core.stdc.stdlib : system;
 
 /// Execute the system ifconfig command with the provided arguments.
 void ifconfigCommand(string[] tokens)

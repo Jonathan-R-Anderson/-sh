@@ -2,7 +2,7 @@ module importcmd;
 
 import std.stdio;
 import std.string : join;
-import std.process : system;
+import core.stdc.stdlib : system;
 
 /// Execute the system import command with the provided arguments.
 void importCommand(string[] tokens)

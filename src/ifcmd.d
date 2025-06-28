@@ -2,7 +2,7 @@ module ifcmd;
 
 import std.stdio;
 import std.string : join, replace;
-import std.process : system;
+import core.stdc.stdlib : system;
 
 /// Evaluate a shell if statement using /bin/sh.
 void ifCommand(string[] tokens)

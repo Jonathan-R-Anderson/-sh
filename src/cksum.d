@@ -5,7 +5,7 @@ import std.file : read;
 
 private immutable uint[256] crcTable = generateTable();
 
-private immutable uint[256] generateTable() {
+private immutable(uint[256]) generateTable() {
     uint[256] tab;
     enum uint POLY = 0xEDB88320;
     foreach(i; 0 .. 256) {

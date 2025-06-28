@@ -2,7 +2,7 @@ module groups;
 
 import std.stdio;
 import std.string : join;
-import std.process : system;
+import core.stdc.stdlib : system;
 
 /// Execute the system groups command with the provided arguments.
 void groupsCommand(string[] tokens)
