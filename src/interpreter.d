@@ -34,6 +34,7 @@ import dmesg;
 import cal;
 import chkconfig;
 import cksum;
+import md5sum;
 import cmp;
 import diff;
 import diff3;
@@ -111,7 +112,7 @@ string[] builtinNames = [
     "at", "atq", "atrm", "awk", "base32", "base64", "basename", "bc", "bg", "fg",
     "bind", "break", "builtin", "bunzip2", "bzcat", "bzip2", "bzip2recover",
     "cal", "caller", "cat", "cd", "cfdisk", "chattr", "chgrp", "chkconfig",
-    "chmod", "chown", "chpasswd", "chroot", "cksum", "cmp", "comm", "command",
+    "chmod", "chown", "chpasswd", "chroot", "cksum", "md5sum", "cmp", "comm", "command",
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
     "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "getfacl", "groupadd", "groupdel", "groupmod", "groups", "gzip", "hash", "head",
@@ -1253,6 +1254,14 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         } else {
             foreach(f; files)
                 cksumFile(f);
+        }
+    } else if(op == "md5sum") {
+        auto files = tokens[1 .. $];
+        if(files.length == 0) {
+            md5sum.md5sumStdin();
+        } else {
+            foreach(f; files)
+                md5sum.md5sumFile(f);
         }
     } else if(op == "cmp") {
         bool optC = false;
