@@ -74,6 +74,10 @@ import join;
 import kill;
 import killall;
 import klist;
+import less;
+import letcmd;
+import linkcmd;
+import ln;
 
 string[] history;
 string[string] aliases;
@@ -102,7 +106,7 @@ string[] builtinNames = [
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
     "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "getfacl", "groupadd", "groupdel", "groupmod", "groups", "gzip", "hash", "head",
-    "help", "history", "iconv", "id", "if", "ifconfig", "ifdown", "ifup", "import", "install", "iostat", "ip", "jobs", "join", "kill", "killall", "klist", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
+    "help", "history", "iconv", "id", "if", "ifconfig", "ifdown", "ifup", "import", "install", "iostat", "ip", "jobs", "join", "kill", "killall", "klist", "less", "let", "link", "ln", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
 
@@ -1790,6 +1794,14 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         killall.killallCommand(tokens);
     } else if(op == "klist") {
         klist.klistCommand(tokens);
+    } else if(op == "less") {
+        less.lessCommand(tokens);
+    } else if(op == "let") {
+        letcmd.letCommand(tokens);
+    } else if(op == "link") {
+        linkcmd.linkCommand(tokens);
+    } else if(op == "ln") {
+        ln.lnCommand(tokens);
     } else if(op == "apt" || op == "apt-get") {
         auto rc = system(cmd);
         if(rc != 0) {
