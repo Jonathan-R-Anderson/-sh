@@ -1,10 +1,14 @@
 module std.file;
 
-import core.sys.posix.unistd : chdir, getcwd as posix_getcwd, symlink, readlink, unlink;
+// Import POSIX filesystem helpers.  Alias `getcwd` to avoid colliding with the
+// wrapper function defined below.
+import core.sys.posix.unistd : chdir, posix_getcwd = getcwd, symlink, readlink, unlink;
 import core.sys.posix.dirent : DIR, dirent, opendir, readdir, closedir;
 import core.sys.posix.fcntl : open, O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, O_APPEND;
 import core.sys.posix.sys.stat : stat, lstat, S_IFDIR, S_IFREG;
-import core.sys.posix.sys.stat : mkdir as posix_mkdir, rmdir as posix_rmdir;
+// Use POSIX versions of directory creation/removal under different names to
+// keep the API small and easy to implement in `betterC` builds.
+import core.sys.posix.sys.stat : posix_mkdir = mkdir, posix_rmdir = rmdir;
 import core.stdc.stdlib : malloc, free;
 import core.stdc.stdio : fopen, fclose, fread, fwrite;
 import core.stdc.string : strlen;
@@ -31,7 +35,7 @@ DirEntry[] dirEntries(string path, SpanMode mode = SpanMode.shallow)
 
 string getcwd()
 {
-    char buf[4096];
+    char[4096] buf;
     auto p = posix_getcwd(buf.ptr, buf.length);
     return p ? buf[0 .. strlen(p)].idup : "";
 }
@@ -58,7 +62,7 @@ string readText(string path)
     if(f is null) return "";
     scope(exit) fclose(f);
     char[] data;
-    ubyte buf[4096];
+    ubyte[4096] buf;
     size_t n;
     while((n = fread(buf.ptr, 1, buf.length, f)) > 0)
         data ~= cast(char[])buf[0 .. n];
@@ -105,7 +109,7 @@ string read(string path)
 
 string readLink(string path)
 {
-    char buf[4096];
+    char[4096] buf;
     auto len = readlink(path.toStringz(), buf.ptr, buf.length - 1);
     if(len < 0) return "";
     return buf[0 .. len].idup;
