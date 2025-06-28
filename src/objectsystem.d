@@ -6,7 +6,21 @@ import mstd.conv : to;
 import mstd.array;
 import mstd.algorithm;
 import mstd.file : write, readText, exists;
-import md5sum : hexDigest;
+import mstd.digest.md : md5Of;
+
+/// Compute MD5 digest of `data` and return it as a lowercase hexadecimal string.
+static string hexDigest(const(ubyte)[] data)
+{
+    immutable char[] hex = "0123456789abcdef";
+    auto dg = md5Of(data);
+    char[32] result;
+    foreach(i, b; dg)
+    {
+        result[i*2]   = hex[(b >> 4) & 0xF];
+        result[i*2+1] = hex[b & 0xF];
+    }
+    return result.idup;
+}
 
 struct Object {
     string id;
