@@ -39,7 +39,7 @@ uint cksumBytes(const(ubyte)[] data) {
 
 void cksumFile(string name) {
     try {
-        auto bytes = read(name);
+        auto bytes = cast(ubyte[])read(name);
         auto crc = cksumBytes(bytes);
         writeln(crc, " ", bytes.length, " ", name);
     } catch(Exception) {

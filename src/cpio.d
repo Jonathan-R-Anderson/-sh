@@ -6,6 +6,7 @@ import std.file : read, write, dirEntries, SpanMode, mkdir, FileException,
 import std.conv : to, octal;
 import std.path : baseName;
 import std.format : format;
+import std.datetime : Clock;
 
 struct Header {
     uint ino;
@@ -74,10 +75,15 @@ struct Entry {
 Entry[] readArchive(string archive) {
     Entry[] entries;
     auto f = File(archive, "rb");
+    ubyte[] tmp;
     while(!f.eof) {
-        auto magic = cast(string)f.read(6);
+        tmp.length = 6;
+        auto readLen = f.rawRead(tmp);
+        auto magic = cast(string)tmp[0 .. readLen].idup;
         if(magic.length == 0) break;
-        auto rest = cast(string)f.read(104);
+        tmp.length = 104;
+        readLen = f.rawRead(tmp);
+        auto rest = cast(string)tmp[0 .. readLen].idup;
         if(magic != "070701") break;
         uint[13] fields;
         foreach(i; 0..13) {
@@ -85,13 +91,18 @@ Entry[] readArchive(string archive) {
             fields[i] = to!uint("0x" ~ hex);
         }
         auto namesize = fields[11];
-        auto fname = cast(string)f.read(namesize);
+        tmp.length = namesize;
+        readLen = f.rawRead(tmp);
+        auto fname = cast(string)tmp[0 .. readLen].idup;
         fname = fname[0 .. $-1];
-        while((f.tell % 4) != 0) f.read(1);
+        while((f.tell % 4) != 0) { tmp.length = 1; f.rawRead(tmp); }
         auto filesize = fields[6];
         ubyte[] content;
-        if(filesize > 0) content = f.read(filesize);
-        while((f.tell % 4) != 0) f.read(1);
+        if(filesize > 0) {
+            content.length = filesize;
+            f.rawRead(content);
+        }
+        while((f.tell % 4) != 0) { tmp.length = 1; f.rawRead(tmp); }
         if(fname == "TRAILER!!!") break;
         entries ~= Entry(fname, (fields[2] & 0x4000) != 0, content);
     }

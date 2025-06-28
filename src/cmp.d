@@ -7,7 +7,6 @@ import std.array : array;
 
 private string formatChar(ubyte b)
 {
-    import std.ascii : isPrint;
     if(b < 32)
         return "^" ~ cast(char)(b + 64);
     else if(b == 127)
@@ -22,8 +21,8 @@ private string formatChar(ubyte b)
         else
             s ~= cast(char)code;
         return s;
-    } else if(isPrint(cast(char)b))
-        return cast(char)b;
+    } else if(b >= 32 && b <= 126)
+        return to!string(cast(char)b);
     else
         return "^?";
 }

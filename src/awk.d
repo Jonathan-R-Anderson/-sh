@@ -4,6 +4,7 @@ import std.stdio;
 import std.file : readText;
 import std.regex : regex, matchFirst;
 import std.string : split, stripRight;
+import std.algorithm.searching : canFind;
 import std.conv : to;
 
 /// Minimal awk implementation supporting simple print statements.
@@ -55,7 +56,7 @@ void awkCommand(string[] tokens)
     } else {
         foreach(f; files) {
             try {
-                inputLines ~= readText(f).splitLines;
+                inputLines ~= readText(f).splitLines();
             } catch(Exception e) {
                 writeln("awk: cannot read ", f);
             }
