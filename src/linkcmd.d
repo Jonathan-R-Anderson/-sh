@@ -1,7 +1,7 @@
 module linkcmd;
 
 import std.stdio;
-import std.file : link;
+import core.sys.posix.unistd : link;
 
 /// Create a hard link.
 void linkCommand(string[] tokens)

@@ -1,7 +1,8 @@
 module ln;
 
 import std.stdio;
-import std.file : link, symlink, remove, exists, isDir;
+import std.file : remove, exists, isDir;
+import core.sys.posix.unistd : link, symlink;
 import std.path : baseName, buildPath;
 
 /// Simplified ln implementation supporting -s, -f and -v.
