@@ -1,4 +1,3 @@
-#!/bin/bash
 set -e
 
 # Modules that use unsupported features (exceptions or std library)
