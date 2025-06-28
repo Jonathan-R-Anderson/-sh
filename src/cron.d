@@ -48,7 +48,7 @@ bool[] parseField(string field, int minVal, int maxVal) {
                 end = start;
             }
         }
-        foreach(i; start..end+1 by step) {
+        for(int i = start; i <= end; i += step) {
             if(i >= minVal && i <= maxVal) mask[i] = true;
         }
     }

@@ -20,19 +20,19 @@ string permString(uint mode)
         case S_IFSOCK: type = 's'; break;
         default: break;
     }
-    string out;
-    out ~= type;
+    string result;
+    result ~= type;
     uint[9] bits = [S_IRUSR,S_IWUSR,S_IXUSR,S_IRGRP,S_IWGRP,S_IXGRP,S_IROTH,S_IWOTH,S_IXOTH];
     foreach(i,b; bits) {
         if(mode & b) {
             final switch(i%3) {
-                case 0: out ~= 'r'; break;
-                case 1: out ~= 'w'; break;
-                case 2: out ~= 'x'; break;
+                  case 0: result ~= 'r'; break;
+                  case 1: result ~= 'w'; break;
+                  case 2: result ~= 'x'; break;
             }
-        } else out ~= '-';
+        } else result ~= '-';
     }
-    return out;
+    return result;
 }
 
 void lsCommand(string[] tokens)

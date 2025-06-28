@@ -31,12 +31,12 @@ string humanSize(ulong bytes, bool si)
 
 void printEntry(ulong bytes, string path, ref Options opts)
 {
-    string out;
+    string result;
     if(opts.human)
-        out = humanSize(bytes, opts.si);
+        result = humanSize(bytes, opts.si);
     else
-        out = to!string(bytes / opts.blockSize);
-    writeln(out, "\t", path);
+        result = to!string(bytes / opts.blockSize);
+    writeln(result, "\t", path);
 }
 
 ulong walk(string path, int depth, ref Options opts)

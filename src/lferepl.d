@@ -121,22 +121,22 @@ string formatValue(Value v) {
 }
 
 string unescape(string s) {
-    string out;
+    string result;
     for(size_t i = 0; i < s.length; i++) {
         auto c = s[i];
         if(c == '\\' && i + 1 < s.length) {
             auto n = s[i+1];
             switch(n) {
-                case 'a': out ~= "\a"; break;
-                case 'b': out ~= "\b"; break;
-                case 'c': return out; // suppress trailing newline
-                case 'e': case 'E': out ~= "\x1b"; break;
-                case 'f': out ~= "\f"; break;
-                case 'n': out ~= "\n"; break;
-                case 'r': out ~= "\r"; break;
-                case 't': out ~= "\t"; break;
-                case 'v': out ~= "\v"; break;
-                case '\\': out ~= "\\"; break;
+                case 'a': result ~= "\a"; break;
+                case 'b': result ~= "\b"; break;
+                case 'c': return result; // suppress trailing newline
+                case 'e': case 'E': result ~= "\x1b"; break;
+                case 'f': result ~= "\f"; break;
+                case 'n': result ~= "\n"; break;
+                case 'r': result ~= "\r"; break;
+                case 't': result ~= "\t"; break;
+                case 'v': result ~= "\v"; break;
+                case '\\': result ~= "\\"; break;
                 case 'x': {
                     string hx; size_t j = i + 2;
                     while(j < s.length && hx.length < 2 &&
@@ -145,9 +145,9 @@ string unescape(string s) {
                            (s[j] >= 'A' && s[j] <= 'F'))) {
                         hx ~= s[j]; j++; }
                     if(hx.length) {
-                        out ~= cast(char)to!int("0x" ~ hx);
+                        result ~= cast(char)to!int("0x" ~ hx);
                         i = j - 1;
-                    } else out ~= 'x';
+                    } else result ~= 'x';
                     break; }
                 case '0': case '1': case '2': case '3': case '4':
                 case '5': case '6': case '7': {
@@ -155,7 +155,7 @@ string unescape(string s) {
                     while(j < s.length && j < i + 4 &&
                           s[j] >= '0' && s[j] <= '7') {
                         oc ~= s[j]; j++; }
-                    out ~= cast(char)to!int(oc, 8);
+                    result ~= cast(char)to!int(oc, 8);
                     i = j - 1; break; }
                 case 'u': case 'U': {
                     size_t maxLen = n == 'u' ? 4 : 8;
@@ -167,19 +167,19 @@ string unescape(string s) {
                         hx ~= s[j]; j++; }
                     if(hx.length) {
                         dchar val = cast(dchar)to!int("0x" ~ hx);
-                        out ~= std.utf.toUTF8(val);
+                        result ~= std.utf.toUTF8(val);
                         i = j - 1;
-                    } else out ~= n;
+                    } else result ~= n;
                     break; }
                 default:
-                    out ~= n; break;
+            result ~= n; break;
             }
             i++; // skip the escape code
         } else {
-            out ~= c;
+            result ~= c;
         }
     }
-    return out;
+    return result;
 }
 
 class LfeParser : Parser {
@@ -1049,25 +1049,25 @@ Value evalList(Expr e) {
         auto argsVal = evalExpr(e.list[2]);
         if(argsVal.kind != ValueKind.List)
             throw new Exception("badarg");
-        string out;
+        string result;
         size_t ai = 0;
         for(size_t i = 0; i < fmt.length; i++) {
             if(fmt[i] == '~' && i + 1 < fmt.length) {
                 auto n = fmt[i+1];
                 if(n == 'w') {
                     if(ai >= argsVal.list.length) throw new Exception("badarg");
-                    out ~= formatValue(argsVal.list[ai++]);
+                    result ~= formatValue(argsVal.list[ai++]);
                     i++;
                     continue;
                 } else if(n == 'n') {
-                    out ~= "\n";
+                    result ~= "\n";
                     i++;
                     continue;
                 }
             }
-            out ~= fmt[i];
+            result ~= fmt[i];
         }
-        write(out);
+        write(result);
         return atomVal("ok");
     } else if(head == "echo") {
         bool newline = true;
@@ -1084,15 +1084,15 @@ Value evalList(Expr e) {
                 idx++;
             } else break;
         }
-        string out;
+        string output;
         for(size_t i = idx; i < e.list.length; i++) {
             auto val = evalExpr(e.list[i]);
-            out ~= formatValue(val);
-            if(i + 1 < e.list.length) out ~= " ";
+            output ~= formatValue(val);
+            if(i + 1 < e.list.length) output ~= " ";
         }
-        if(interpret) out = unescape(out);
-        if(newline) out ~= "\n";
-        write(out);
+        if(interpret) output = unescape(output);
+        if(newline) output ~= "\n";
+        write(output);
         return atomVal("ok");
     } else if(head == "cp") {
         auto srcVal = evalExpr(e.list[1]);

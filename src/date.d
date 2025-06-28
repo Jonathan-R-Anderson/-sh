@@ -39,28 +39,28 @@ string four(int n) {
 }
 
 string formatDate(SysTime t, string fmt) {
-    string out;
+    string result;
     for(size_t i=0; i<fmt.length; ++i) {
         if(fmt[i] == '%' && i + 1 < fmt.length) {
             auto c = fmt[i+1];
             switch(c) {
-                case '%': out ~= "%"; break;
-                case 'Y': out ~= four(t.year); break;
-                case 'm': out ~= two(t.month); break;
-                case 'd': out ~= two(t.day); break;
-                case 'H': out ~= two(t.hour); break;
-                case 'M': out ~= two(t.minute); break;
-                case 'S': out ~= two(t.second); break;
-                case 'F': out ~= four(t.year) ~ "-" ~ two(t.month) ~ "-" ~ two(t.day); break;
-                case 'T': out ~= two(t.hour) ~ ":" ~ two(t.minute) ~ ":" ~ two(t.second); break;
-                default: out ~= "%" ~ c; break;
+                case '%': result ~= "%"; break;
+                case 'Y': result ~= four(t.year); break;
+                case 'm': result ~= two(t.month); break;
+                case 'd': result ~= two(t.day); break;
+                case 'H': result ~= two(t.hour); break;
+                case 'M': result ~= two(t.minute); break;
+                case 'S': result ~= two(t.second); break;
+                case 'F': result ~= four(t.year) ~ "-" ~ two(t.month) ~ "-" ~ two(t.day); break;
+                case 'T': result ~= two(t.hour) ~ ":" ~ two(t.minute) ~ ":" ~ two(t.second); break;
+                default: result ~= "%" ~ c; break;
             }
             i++;
         } else {
-            out ~= fmt[i];
+            result ~= fmt[i];
         }
     }
-    return out;
+    return result;
 }
 
 void dateCommand(string[] tokens) {

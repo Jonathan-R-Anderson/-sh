@@ -7,16 +7,16 @@ import std.format : format;
 
 string escapeName(string name)
 {
-    string out;
+    string result;
     foreach(dchar c; name) {
         if(c == '\\')
-            out ~= "\\\\";
+            result ~= "\\\\";
         else if(c < 32 || c == 127)
-            out ~= "\\" ~ format("%03o", cast(int)c);
+            result ~= "\\" ~ format("%03o", cast(int)c);
         else
-            out ~= cast(char)c;
+            result ~= cast(char)c;
     }
-    return out;
+    return result;
 }
 
 void dirCommand(string[] tokens)
