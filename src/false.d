@@ -1,4 +1,4 @@
-module false;
+module cmd_false;
 
 import core.stdc.stdlib : exit;
 

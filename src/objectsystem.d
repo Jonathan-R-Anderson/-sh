@@ -217,9 +217,9 @@ bool emit(string obj, string event, string data) {
     return true;
 }
 
-bool attach(string parent, string child, string alias) {
+bool attach(string parent, string child, string aliasName) {
     if(parent !in registry || child !in registry) return false;
-    registry[parent].children ~= alias;
+    registry[parent].children ~= aliasName;
     registry[child].parent = parent;
     return true;
 }

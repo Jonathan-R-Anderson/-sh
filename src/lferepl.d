@@ -1438,8 +1438,8 @@ Value evalList(Expr e) {
     } else if(head == "attach") {
         auto parent = valueToString(evalExpr(e.list[1]));
         auto child = valueToString(evalExpr(e.list[2]));
-        auto alias = valueToString(evalExpr(e.list[3]));
-        bool ok = objectsystem.attach(parent, child, alias);
+        auto aliasName = valueToString(evalExpr(e.list[3]));
+        bool ok = objectsystem.attach(parent, child, aliasName);
         return atomVal(ok ? "true" : "false");
     } else if(head == "detach") {
         auto parent = valueToString(evalExpr(e.list[1]));

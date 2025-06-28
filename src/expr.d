@@ -210,10 +210,11 @@ private Value parseAnd(string[] tokens, ref size_t idx) {
     while(idx < tokens.length && tokens[idx] == "&") {
         idx++;
         auto rhs = parseCompare(tokens, idx);
-        if(truthy(val) && truthy(rhs))
-            ; // keep val
-        else
+        if(truthy(val) && truthy(rhs)) {
+            /* keep current value */
+        } else {
             val = makeNumber(0);
+        }
     }
     return val;
 }
