@@ -1581,7 +1581,8 @@ void repl() {
     }
 }
 
-void main() {
+/// Start the minimal LFE REPL.
+void lfereplMain() {
     repl();
 }
 

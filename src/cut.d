@@ -1,7 +1,7 @@
 module cut;
 
 import std.stdio;
-import std.string : split, splitLines, join;
+import std.string : split, splitLines, join, indexOf, startsWith, stripRight;
 import std.file : readText;
 import std.conv : to;
 

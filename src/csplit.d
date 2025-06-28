@@ -2,7 +2,7 @@ module csplit;
 
 import std.stdio;
 import std.file : readText, write;
-import std.string : splitLines, join;
+import std.string : splitLines, join, indexOf;
 import std.regex : regex, matchFirst;
 import std.conv : to;
 import std.format : format;

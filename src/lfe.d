@@ -85,7 +85,8 @@ string exprToErlang(Expr e) {
     return func ~ "(" ~ args ~ ")";
 }
 
-void main(string[] args) {
+/// Convert a minimal LFE program to Erlang source.
+void lfeMain(string[] args) {
     if (args.length < 2) {
         writeln("Usage: lfe \"(defmodule ... )\"");
         return;

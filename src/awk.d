@@ -3,7 +3,7 @@ module awk;
 import std.stdio;
 import std.file : readText;
 import std.regex : regex, matchFirst;
-import std.string : split, stripRight;
+import std.string : split, splitLines, stripRight;
 import std.algorithm.searching : canFind;
 import std.conv : to;
 
