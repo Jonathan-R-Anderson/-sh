@@ -73,8 +73,8 @@ ubyte[] base32Decode(string data, bool ignoreGarbage = false)
         buffer = (buffer << 5) | cast(uint)idx;
         bits += 5;
         if(bits >= 8) {
-            auto byte = (buffer >> (bits - 8)) & 0xFF;
-            result.put(cast(ubyte)byte);
+            auto b = (buffer >> (bits - 8)) & 0xFF;
+            result.put(cast(ubyte)b);
             bits -= 8;
         }
     }

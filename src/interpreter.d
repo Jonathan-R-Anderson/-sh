@@ -1622,6 +1622,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
                     variables[name] = value;
                 }
             }
+        }
     } else if(op == "getopts") {
         getopts.getoptsCommand(tokens);
     } else if(op == "unalias") {
