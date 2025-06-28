@@ -6,9 +6,15 @@ unsupported=$(grep -lE '\b(Exception|import std|try|catch|throw)\b' src/*.d | tr
 modules=""
 for f in src/*.d; do
     base=$(basename "$f")
-    if [[ " $unsupported " != *" $f "* ]]; then
-        modules+="$f "
+    # Skip modules flagged as unsupported
+    if [[ " $unsupported " == *" $f "* ]]; then
+        continue
     fi
+    # Skip demonstration program which depends on unsupported modules
+    if [[ "$base" == "example.d" ]]; then
+        continue
+    fi
+    modules+="$f "
 done
 
 # Always include the interpreter even if it was flagged as unsupported
