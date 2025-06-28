@@ -6,13 +6,18 @@ The implementation is intentionally small and demonstrates how one might begin t
 
 ## Building
 
-A D compiler such as `dmd` or `ldc2` is required. To cross compile for a specific target, supply the desired architecture flags to the compiler. For example:
+A D compiler such as `dmd` or `ldc2` is required. When targeting an environment
+without the full D runtime, modules that use unsupported features must be
+excluded. The helper script `build_betterc.sh` automatically filters these
+modules and compiles the interpreter only with the compatible sources:
 
 ```bash
-ldc2 -betterC --nodefaultlib -I=. -mtriple=<target> src/*.d -of=interpreter
+./build_betterc.sh
 ```
 
-Replace `<target>` with the appropriate triple for the operating system described in the `internetcomputer` repository.
+`build_betterc.sh` assumes `ldc2` is available on your `PATH` and uses the
+`x86_64-pc-linux-gnu` triple by default. Adjust the script if a different target
+is required.
 
 ## Usage
 
