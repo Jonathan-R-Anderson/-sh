@@ -60,6 +60,10 @@ import groupdel;
 import groupmod;
 import groups;
 import gzip;
+import iconv;
+import id;
+import ifcmd;
+import ifconfig;
 
 string[] history;
 string[string] aliases;
@@ -88,7 +92,7 @@ string[] builtinNames = [
     "cp", "cron", "crontab", "csplit", "cut", "date", "dc", "dd", "ddrescue", "fdformat", "fdisk",
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
     "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "getfacl", "groupadd", "groupdel", "groupmod", "groups", "gzip", "hash", "head",
-    "help", "history", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
+    "help", "history", "iconv", "id", "if", "ifconfig", "jobs", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
     "rmdir", "tail", "touch", "unalias"
 ];
 
@@ -1743,6 +1747,14 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         foreach(i, cmdLine; history) {
             writeln(i + 1, " ", cmdLine);
         }
+    } else if(op == "iconv") {
+        iconv.iconvCommand(tokens);
+    } else if(op == "id") {
+        id.idCommand(tokens);
+    } else if(op == "if") {
+        ifcmd.ifCommand(tokens);
+    } else if(op == "ifconfig") {
+        ifconfig.ifconfigCommand(tokens);
     } else if(op == "jobs") {
         foreach(job; bgJobs) {
             auto status = job.running ? "Running" : "Done";
