@@ -78,6 +78,11 @@ import less;
 import letcmd;
 import linkcmd;
 import ln;
+import local;
+import locate;
+import login;
+import logname;
+import logout;
 
 string[] history;
 string[string] aliases;
@@ -107,7 +112,7 @@ string[] builtinNames = [
     "declare", "df", "diff", "diff3", "dir", "dircolors", "dirname", "dirs",
     "dmesg", "dos2unix", "du", "echo", "egrep", "eject", "env", "eval", "exec", "exit", "expand", "false", "expr", "export", "for", "getopts", "grep", "fgrep", "file", "find", "fmt", "fold", "fsck", "fuser", "getfacl", "groupadd", "groupdel", "groupmod", "groups", "gzip", "hash", "head",
     "help", "history", "iconv", "id", "if", "ifconfig", "ifdown", "ifup", "import", "install", "iostat", "ip", "jobs", "join", "kill", "killall", "klist", "less", "let", "link", "ln", "ls", "mkdir", "mv", "popd", "pushd", "pwd", "rm",
-    "rmdir", "tail", "touch", "unalias"
+    "rmdir", "tail", "touch", "unalias", "local", "locate", "login", "logname", "logout"
 ];
 
 bool[string] builtinEnabled;
@@ -1802,6 +1807,16 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         linkcmd.linkCommand(tokens);
     } else if(op == "ln") {
         ln.lnCommand(tokens);
+    } else if(op == "local") {
+        local.localCommand(tokens);
+    } else if(op == "locate") {
+        locate.locateCommand(tokens);
+    } else if(op == "login") {
+        login.loginCommand(tokens);
+    } else if(op == "logname") {
+        logname.lognameCommand(tokens);
+    } else if(op == "logout") {
+        logout.logoutCommand(tokens);
     } else if(op == "apt" || op == "apt-get") {
         auto rc = system(cmd);
         if(rc != 0) {

@@ -18,6 +18,11 @@ import core.sync.condition : Condition;
 import std.process : system;
 version(Posix) import core.sys.posix.unistd : execvp;
 import objectsystem;
+import local;
+import locate;
+import login;
+import logname;
+import logout;
 
 struct Expr {
     bool isList;
@@ -1105,6 +1110,30 @@ Value evalList(Expr e) {
             writeln("cp: failed to copy ", src, " to ", dst);
             return atomVal("error");
         }
+    } else if(head == "local") {
+        string[] toks = ["local"];
+        foreach(expr; e.list[1 .. $])
+            toks ~= valueToString(evalExpr(expr));
+        local.localCommand(toks);
+        return atomVal("ok");
+    } else if(head == "locate") {
+        string[] toks = ["locate"];
+        foreach(expr; e.list[1 .. $])
+            toks ~= valueToString(evalExpr(expr));
+        locate.locateCommand(toks);
+        return atomVal("ok");
+    } else if(head == "login") {
+        string[] toks = ["login"];
+        foreach(expr; e.list[1 .. $])
+            toks ~= valueToString(evalExpr(expr));
+        login.loginCommand(toks);
+        return atomVal("ok");
+    } else if(head == "logname") {
+        logname.lognameCommand(["logname"]);
+        return atomVal("ok");
+    } else if(head == "logout") {
+        logout.logoutCommand(["logout"]);
+        return num(0); /* unreachable */
     } else if(head == "cpio-create") {
         if(e.list.length < 3) return atomVal("error");
         auto archVal = evalExpr(e.list[1]);
