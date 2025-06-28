@@ -79,7 +79,7 @@ bool cmpFiles(string f1, string f2, size_t ignore=0, bool printChars=false, bool
         differ = true;
         if(!quiet && !listDiffs && !printChars) {
             line = 1;
-            foreach(idx, byte; a[0 .. minLen]) if(byte == '\n') line++;
+            foreach(idx, bval; a[0 .. minLen]) if(bval == '\n') line++;
             size_t off = minLen + 1 + ignore;
             if(a.length < b.length)
                 writeln("cmp: EOF on ", f1, " after byte ", off-1, ", line ", line);

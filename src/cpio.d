@@ -49,20 +49,20 @@ void writeHeader(File f, string name, bool dir, ulong size) {
 }
 
 void createArchive(string archive, string[] files) {
-    auto out = File(archive, "wb");
+    auto fout = File(archive, "wb");
     foreach(path; files) {
         bool dir = isDir(path);
         auto name = baseName(path);
         ulong size = dir ? 0 : getSize(path);
-        writeHeader(out, name, dir, size);
+        writeHeader(fout, name, dir, size);
         if(!dir)
-            out.rawWrite(read(path));
-        while((out.tell % 4) != 0) out.write('\0');
+            fout.rawWrite(read(path));
+        while((fout.tell % 4) != 0) fout.write('\0');
     }
     // trailer
-    out.write("07070100000000000000000000000000000000000000000000000000000000000000000000000B00000000TRAILER!!!\0");
-    while((out.tell % 4) != 0) out.write('\0');
-    out.close();
+    fout.write("07070100000000000000000000000000000000000000000000000000000000000000000000000B00000000TRAILER!!!\0");
+    while((fout.tell % 4) != 0) fout.write('\0');
+    fout.close();
 }
 
 struct Entry {
@@ -93,7 +93,7 @@ Entry[] readArchive(string archive) {
         if(filesize > 0) content = f.read(filesize);
         while((f.tell % 4) != 0) f.read(1);
         if(fname == "TRAILER!!!") break;
-        entries ~= Entry(fname, fields[2] & 0x4000 != 0, content);
+        entries ~= Entry(fname, (fields[2] & 0x4000) != 0, content);
     }
     f.close();
     return entries;
@@ -103,7 +103,7 @@ void extractArchive(string archive) {
     auto entries = readArchive(archive);
     foreach(e; entries) {
         if(e.isDir) {
-            mkdir(e.name, 0o755);
+            mkdir(e.name, 0755);
         } else {
             write(e.name, e.data);
         }
