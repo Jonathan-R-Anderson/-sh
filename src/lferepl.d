@@ -266,6 +266,7 @@ MacroDef[string] macros;
 string[][string] moduleFunctions;
 string[][string] recordDefs;
 size_t pidCounter;
+string[] historyLines;
 
 class Process {
     Mutex m;
@@ -1126,6 +1127,61 @@ Value evalList(Expr e) {
             arch = arch[1 .. $-1];
         extractArchive(arch);
         return atomVal("ok");
+    } else if(head == "head") {
+        if(e.list.length < 2) return atomVal("error");
+        auto fileVal = evalExpr(e.list[1]);
+        string file = valueToString(fileVal);
+        if(file.length >= 2 && file[0] == '"' && file[$-1] == '"')
+            file = file[1 .. $-1];
+        size_t lines = 10;
+        if(e.list.length > 2)
+            lines = cast(size_t)evalExpr(e.list[2]).number;
+        try {
+            auto text = readText(file).splitLines;
+            size_t count = 0;
+            foreach(l; text) {
+                writeln(l);
+                count++;
+                if(count >= lines) break;
+            }
+            return atomVal("ok");
+        } catch(Exception) {
+            writeln("head: cannot read ", file);
+            return atomVal("error");
+        }
+    } else if(head == "history") {
+        foreach(i, cmd; historyLines)
+            writeln(i + 1, " ", cmd);
+        return atomVal("ok");
+    } else if(head == "hostname") {
+        version(Posix) {
+            import core.sys.posix.unistd : gethostname, sethostname;
+            char[256] buf;
+            if(e.list.length == 1) {
+                auto len = gethostname(buf.ptr, buf.length);
+                auto name = buf[0 .. (len < 0 ? 0 : len)];
+                writeln(name);
+            } else {
+                auto val = evalExpr(e.list[1]);
+                string name = valueToString(val);
+                if(name.length >= 2 && name[0] == '"' && name[$-1] == '"')
+                    name = name[1 .. $-1];
+                sethostname(name.ptr, cast(size_t)name.length);
+            }
+            return atomVal("ok");
+        } else {
+            writeln("hostname not supported");
+            return atomVal("error");
+        }
+    } else if(head == "htop") {
+        string[] args;
+        foreach(expr; e.list[1 .. $])
+            args ~= valueToString(evalExpr(expr));
+        string cmd = "htop" ~ (args.length ? " " ~ args.join(" ") : "");
+        auto rc = system(cmd);
+        if(rc != 0)
+            writeln("htop failed with code ", rc);
+        return num(rc);
     } else if(head == "proplists:get_value") {
         auto key = evalExpr(e.list[1]);
         auto plist = evalExpr(e.list[2]);
@@ -1473,6 +1529,7 @@ void repl() {
         if(line is null) break;
         line = line.strip;
         if(line.length == 0) continue;
+        historyLines ~= line;
         auto tabPos = line.indexOf('\t');
         if(tabPos >= 0) {
             auto prefix = line[0 .. tabPos];
