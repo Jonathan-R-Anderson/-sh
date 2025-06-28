@@ -21,4 +21,7 @@ done
 modules+="src/interpreter.d"
 
 echo "Compiling modules:" $modules
-ldc2 -betterC --nodefaultlib -I=. -mtriple=x86_64-pc-linux-gnu $modules -of=interpreter
+# Add the src directory to the import path so the compiler can locate
+# modules such as `dircolors` which live under src/ while declaring
+# a simple module name.
+ldc2 -betterC --nodefaultlib -I=. -Isrc -mtriple=x86_64-pc-linux-gnu $modules -of=interpreter
