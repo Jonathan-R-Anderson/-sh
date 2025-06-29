@@ -6,18 +6,15 @@ The implementation is intentionally small and demonstrates how one might begin t
 
 ## Building
 
-A D compiler such as `dmd` or `ldc2` is required. When targeting an environment
-without the full D runtime, modules that use unsupported features must be
-excluded. The helper script `build_betterc.sh` automatically filters these
-modules and compiles the interpreter only with the compatible sources:
+A D compiler such as `dmd` or `ldc2` is required. The interpreter can now be
+built with the full D runtime using the `build_full.sh` helper script:
 
 ```bash
-./build_betterc.sh
+./build_full.sh
 ```
 
-`build_betterc.sh` assumes `ldc2` is available on your `PATH` and uses the
-`x86_64-pc-linux-gnu` triple by default. Adjust the script if a different target
-is required.
+`build_full.sh` assumes `ldc2` is available on your `PATH`. Adjust the script if
+you prefer a different compiler or additional flags.
 
 ## Usage
 
