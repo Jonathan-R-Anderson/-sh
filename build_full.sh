@@ -6,4 +6,5 @@ modules=$(ls src/*.d | tr '\n' ' ')
 
 echo "Compiling modules:" $modules
 
-ldc2 -I=. -Isrc $modules -of=interpreter
+dmd_cmd=${DC:-anonymos-dmd}
+"$dmd_cmd" -I=. -Isrc $modules -of=interpreter

@@ -6,15 +6,16 @@ The implementation is intentionally small and demonstrates how one might begin t
 
 ## Building
 
-A D compiler such as `dmd` or `ldc2` is required. The interpreter can now be
+A D compiler such as [`anonymos-dmd`](https://github.com/Jonathan-R-Anderson/anonymos-dmd) or `ldc2` is required. The interpreter can now be
 built with the full D runtime using the `build_full.sh` helper script:
 
 ```bash
 ./build_full.sh
 ```
 
-`build_full.sh` assumes `ldc2` is available on your `PATH`. Adjust the script if
-you prefer a different compiler or additional flags.
+`build_full.sh` will use `anonymos-dmd` by default. Set the `DC` environment
+variable to override the compiler if you prefer `ldc2` or another
+compatible D compiler.
 
 ## Usage
 

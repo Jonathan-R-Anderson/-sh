@@ -24,4 +24,5 @@ echo "Compiling modules:" $modules
 # Add the src directory to the import path so the compiler can locate
 # modules such as `dircolors` which live under src/ while declaring
 # a simple module name.
-ldc2 -betterC --nodefaultlib -I=. -Isrc -mtriple=x86_64-pc-linux-gnu $modules -of=interpreter
+dmd_cmd=${DC:-anonymos-dmd}
+"$dmd_cmd" -betterC --nodefaultlib -I=. -Isrc -mtriple=x86_64-pc-linux-gnu $modules -of=interpreter
