@@ -1,4 +1,8 @@
+#!/usr/bin/env bash
 set -e
+
+# Determine target system from argument or SYSTEM env var
+system=${1:-${SYSTEM:-custom}}
 
 # Modules that use unsupported features (exceptions or std library)
 unsupported=$(grep -lE '\b(Exception|import std|try|catch|throw)\b' src/*.d | tr '\n' ' ')
@@ -24,5 +28,9 @@ echo "Compiling modules:" $modules
 # Add the src directory to the import path so the compiler can locate
 # modules such as `dircolors` which live under src/ while declaring
 # a simple module name.
-dmd_cmd=${DC:-anonymos-dmd}
+if [[ "$system" == "linux" ]]; then
+    dmd_cmd=${DC:-dmd}
+else
+    dmd_cmd=${DC:-anonymos-dmd}
+fi
 "$dmd_cmd" -betterC --nodefaultlib -I=. -Isrc -mtriple=x86_64-pc-linux-gnu $modules -of=interpreter

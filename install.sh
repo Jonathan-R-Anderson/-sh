@@ -2,8 +2,9 @@
 # Install the custom D-based shell as a login shell
 set -e
 
-# Build the shell using the existing build script
-./build_full.sh
+# Determine target system and build accordingly
+system=${1:-${SYSTEM:-custom}}
+./build_full.sh "$system"
 
 # Determine install destination
 DEST="${PREFIX:-/usr/local/bin}"
