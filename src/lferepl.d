@@ -368,7 +368,7 @@ Value quoteValue(Expr e);
 Expr valueToExpr(Value v);
 Expr macroExpand(Expr e);
 
-immutable Rule[] rules = [
+Rule[] rules = [
     Rule("HASHMAP", regex("#M\\(")),
     Rule("HASHLPAREN", regex("#\\(")),
     Rule("LPAREN", regex("\\(")),

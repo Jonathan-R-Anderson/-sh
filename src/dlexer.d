@@ -13,7 +13,7 @@ struct Token {
 /// Defines a single tokenization rule.
 struct Rule {
     string name;
-    Regex!char pattern;
+    Regex pattern;
 }
 
 /// Simple regex-based lexer inspired by Python's SLY.

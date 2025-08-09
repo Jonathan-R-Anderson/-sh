@@ -4,6 +4,7 @@ extern(C):
 import core.stdc.stdio : FILE, fopen, fread, fwrite, fclose, ftell, fseek, SEEK_SET;
 import core.stdc.stdlib : malloc, free;
 import core.stdc.string : strlen, strcmp, memcmp;
+import mstd.string : toStringz;
 
 // Entry structure for extracted files
 struct Entry {
@@ -107,4 +108,73 @@ void extractArchive(const(char)* archive) {
         free(cast(void*)e.name);
         if (e.data) free(e.data);
     }
+}
+
+// Create a very small "newc" cpio archive containing ``files``.  This
+// implementation is intentionally minimal and only supports regular files.
+void createArchive(string archive, string[] files)
+{
+    FILE* f = fopen(archive.toStringz(), "wb");
+    if(!f) return;
+    scope(exit) fclose(f);
+
+    // Helper to write an 8-character hexadecimal field
+    void writeHex(uint value)
+    {
+        char[8] buf;
+        foreach_reverse(i; 0 .. 8)
+        {
+            uint v = value & 0xF;
+            buf[i] = cast(char)(v < 10 ? '0' + v : 'A' + (v - 10));
+            value >>= 4;
+        }
+        fwrite(buf.ptr, 1, 8, f);
+    }
+
+    import core.sys.posix.sys.stat : stat, stat_t, S_IFDIR;
+
+    foreach(file; files)
+    {
+        stat_t sb;
+        if(stat(file.toStringz(), &sb) != 0) continue;
+
+        fwrite("070701".ptr, 1, 6, f);
+        uint[13] fields;
+        fields[0] = 0; // ino
+        fields[1] = sb.st_mode;
+        fields[2] = 0; // uid
+        fields[3] = 0; // gid
+        fields[4] = 1; // nlink
+        fields[5] = cast(uint)sb.st_mtime;
+        fields[6] = cast(uint)sb.st_size; // filesize
+        fields[7] = fields[8] = fields[9] = fields[10] = 0; // dev fields
+        fields[11] = cast(uint)(file.length + 1); // namesize including NUL
+        fields[12] = 0; // check
+        foreach(val; fields) writeHex(val);
+
+        fwrite(file.ptr, 1, file.length, f);
+        fwrite("\0".ptr, 1, 1, f);
+        while((ftell(f) & 3) != 0) fwrite("\0".ptr, 1, 1, f);
+
+        if(sb.st_size > 0 && (sb.st_mode & S_IFDIR) == 0)
+        {
+            FILE* rf = fopen(file.toStringz(), "rb");
+            if(rf)
+            {
+                scope(exit) fclose(rf);
+                ubyte[4096] buf;
+                size_t n;
+                while((n = fread(buf.ptr, 1, buf.length, rf)) > 0)
+                    fwrite(buf.ptr, 1, n, f);
+            }
+        }
+        while((ftell(f) & 3) != 0) fwrite("\0".ptr, 1, 1, f);
+    }
+
+    // Write trailer entry
+    fwrite("070701".ptr, 1, 6, f);
+    uint[13] endFields = [0,0,0,0,0,0,0,0,0,0,0,11,0];
+    foreach(val; endFields) writeHex(val);
+    fwrite("TRAILER!!!\0".ptr, 1, 11, f);
+    while((ftell(f) & 3) != 0) fwrite("\0".ptr, 1, 1, f);
 }
