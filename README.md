@@ -16,6 +16,15 @@ built with the full D runtime using the `build_full.sh` helper script:
 `build_full.sh` will use `anonymos-dmd` by default. Set the `DC` environment
 variable to override the compiler if you prefer `ldc2` or another
 compatible D compiler.
+## Installing as a login shell
+
+To build and install the interpreter so it can be used as a login shell run:
+
+```bash
+./install.sh
+```
+
+This script builds the binary, copies it to /usr/local/bin/dshell, and ensures /etc/shells includes the new path so you can select it with `chsh`.
 
 ## Usage
 
