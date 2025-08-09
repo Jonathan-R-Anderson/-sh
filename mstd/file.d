@@ -5,13 +5,14 @@ module mstd.file;
 public import core.sys.posix.unistd : chdir, posix_getcwd = getcwd, symlink, readlink, unlink;
 import core.sys.posix.dirent : DIR, dirent, opendir, readdir, closedir;
 import core.sys.posix.fcntl : open, O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, O_APPEND;
-import core.sys.posix.sys.stat : stat, lstat, S_IFDIR, S_IFREG;
-// Use POSIX versions of directory creation/removal under different names to
-// keep the API small and easy to implement in `betterC` builds.
-import core.sys.posix.sys.stat : posix_mkdir = mkdir, posix_rmdir = rmdir;
+import core.sys.posix.sys.stat : stat, lstat, S_IFDIR, S_IFREG, posix_mkdir = mkdir;
+// `rmdir` lives in `unistd`, so pull it from there under a POSIX-prefixed
+// name to mirror `posix_mkdir` above.
+import core.sys.posix.unistd : posix_rmdir = rmdir;
 import core.stdc.stdlib : malloc, free;
 import core.stdc.stdio : fopen, fclose, fread, fwrite;
 import core.stdc.string : strlen;
+import mstd.string : toStringz;
 
 struct DirEntry { string name; }
 
@@ -113,5 +114,19 @@ string readLink(string path)
     auto len = readlink(path.toStringz(), buf.ptr, buf.length - 1);
     if(len < 0) return "";
     return buf[0 .. len].idup;
+}
+
+/// Create a directory at ``path`` with the given ``mode`` (defaults to
+/// ``0777`` like the POSIX ``mkdir``).  This is a small wrapper around the
+/// POSIX call to keep the public API simple.
+void mkdir(string path, int mode = 0o777)
+{
+    posix_mkdir(path.toStringz(), mode);
+}
+
+/// Remove the directory at ``path``.
+void rmdir(string path)
+{
+    posix_rmdir(path.toStringz());
 }
 
