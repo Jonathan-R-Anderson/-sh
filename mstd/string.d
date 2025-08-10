@@ -79,6 +79,13 @@ int indexOf(string s, string sub)
     return -1;
 }
 
+int indexOf(string s, char ch)
+{
+    for(size_t i = 0; i < s.length; i++)
+        if(s[i] == ch) return cast(int)i;
+    return -1;
+}
+
 int lastIndexOf(string s, string sub)
 {
     auto len = sub.length;

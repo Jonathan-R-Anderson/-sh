@@ -4,7 +4,7 @@ import mstd.stdio;
 import mstd.file : readText, write, exists, remove;
 import mstd.process : environment;
 import core.stdc.stdlib : system;
-import mstd.string : startsWith;
+import mstd.string : startsWith, toStringz;
 
 void editFile(string path)
 {
@@ -15,7 +15,7 @@ void editFile(string path)
         editor = e2;
     else
         editor = "vi";
-    system(editor ~ " " ~ path);
+    system((editor ~ " " ~ path).toStringz());
 }
 
 void installFile(string src, string dest)

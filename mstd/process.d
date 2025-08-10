@@ -19,3 +19,9 @@ static this()
         }
     }
 }
+
+string get(string[string] aa, string key, string defaultValue = null)
+{
+    auto p = key in aa;
+    return p ? *p : defaultValue;
+}

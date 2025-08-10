@@ -49,3 +49,75 @@ string readln()
     return cast(string)buf;
 }
 
+struct ByChunkRange
+{
+    File f;
+    size_t chunkSize;
+    ubyte[] buffer;
+    bool done;
+
+    this(File f, size_t chunkSize)
+    {
+        this.f = f;
+        this.chunkSize = chunkSize;
+        popFront();
+    }
+
+    @property bool empty() const { return done; }
+    @property ubyte[] front() { return buffer; }
+
+    void popFront()
+    {
+        if(done) return;
+        if(buffer.length != chunkSize) buffer.length = chunkSize;
+        auto n = fread(buffer.ptr, 1, chunkSize, f);
+        buffer = buffer[0 .. n];
+        if(n == 0) done = true;
+    }
+}
+
+ByChunkRange byChunk(File f, size_t chunkSize)
+{
+    return ByChunkRange(f, chunkSize);
+}
+
+struct ByLineRange
+{
+    File f;
+    string line;
+    bool done;
+
+    this(File f)
+    {
+        this.f = f;
+        popFront();
+    }
+
+    @property bool empty() const { return done; }
+    @property string front() { return line; }
+
+    void popFront()
+    {
+        if(done) return;
+        char[] buf;
+        int c = fgetc(f);
+        if(c == EOF)
+        {
+            done = true;
+            line = null;
+            return;
+        }
+        while(c != EOF && c != '\n')
+        {
+            buf ~= cast(char)c;
+            c = fgetc(f);
+        }
+        line = cast(string)buf;
+    }
+}
+
+ByLineRange byLine(File f)
+{
+    return ByLineRange(f);
+}
+

@@ -1,7 +1,7 @@
 module cpio;
 
 extern(C):
-import core.stdc.stdio : FILE, fopen, fread, fwrite, fclose, ftell, fseek, SEEK_SET;
+import core.stdc.stdio : FILE, fopen, fread, fwrite, fclose, ftell, fseek, feof, SEEK_SET;
 import core.stdc.stdlib : malloc, free;
 import core.stdc.string : strlen, strcmp, memcmp;
 import mstd.string : toStringz;
@@ -52,7 +52,7 @@ int readArchive(const(char)* archive, Entry* outEntries, int maxEntries) {
         char[7] magic = void;
         fread(magic.ptr, 1, 6, f);
         magic[6] = '\0';
-        if (memcmp(magic.ptr, "070701", 6) != 0) break;
+        if (memcmp(magic.ptr, cast(const void*)"070701".ptr, 6) != 0) break;
 
         char[105] header = void;
         fread(header.ptr, 1, 104, f);
