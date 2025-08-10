@@ -3,6 +3,7 @@ module mstd.conv;
 import core.stdc.stdlib : atoi, strtol, strtoll, strtod;
 import core.stdc.stdio : sprintf;
 import std.bigint : BigInt;
+import std.conv : to as stdTo;
 
 class ConvException : Exception
 {
@@ -41,7 +42,10 @@ T to(T, S)(S value)
     {
         static if (is(S == BigInt))
         {
-            return value.toString();
+            // ``std.bigint.BigInt`` no longer offers a parameterless ``toString``
+            // overload.  Use Phobos' ``std.conv.to`` to perform the conversion
+            // instead of the removed method.
+            return stdTo!string(value);
         }
         else
         {
