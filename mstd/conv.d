@@ -24,6 +24,8 @@ T to(T, S)(S value)
             return atoi(value.ptr);
         else static if (is(T == long))
             return strtoll(value.ptr, null, 10);
+        else static if (is(T == ulong))
+            return cast(ulong)strtoll(value.ptr, null, 10);
         else static if (is(T == double))
             return strtod(value.ptr, null);
         else static if (is(T == string))
