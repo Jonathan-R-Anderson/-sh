@@ -2,8 +2,10 @@ module diff;
 
 import mstd.stdio;
 import mstd.file : readText;
-import mstd.string : splitLines, toLower, strip, join, split;
-import mstd.algorithm : max;
+// String utilities plus `startsWith` for option parsing.
+import mstd.string : splitLines, toLower, strip, join, split, startsWith;
+// Algorithm helpers used for mapping and filtering ranges.
+import mstd.algorithm : max, map, filter;
 import mstd.array : array;
 
 struct DiffOp {
@@ -31,7 +33,14 @@ string normalize(string line, bool ignoreCase, bool ignoreSpace, bool ignoreBlan
 {
     auto l = line;
     if(ignoreSpace)
-        l = l.split.whitespace.join(" ").strip;
+    {
+        // Collapse runs of whitespace into a single space.  `split` defaults to
+        // splitting on a space, so remove empty segments to handle multiple
+        // spaces before joining them back together.
+        auto parts = l.split();
+        auto filtered = parts.filter!(p => p.length > 0);
+        l = filtered.join(" ").strip;
+    }
     if(ignoreBlank && l.length == 0)
         l = "";
     if(ignoreCase)
@@ -121,7 +130,6 @@ void diffFiles(string f1, string f2,
             case ' ': if(unified) writeln(" " ~ op.line); break;
             case '+': writeln(unified?"+" ~ op.line:"> " ~ op.line); break;
             case '-': writeln(unified?"-" ~ op.line:"< " ~ op.line); break;
-            default: break;
         }
     }
 }
