@@ -2,7 +2,7 @@ module crontab;
 
 import mstd.stdio;
 import mstd.file : readText, write, exists, remove;
-import mstd.process : environment;
+import mstd.process : environment, get;
 import core.stdc.stdlib : system;
 import mstd.string : startsWith, toStringz;
 
