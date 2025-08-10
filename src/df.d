@@ -2,7 +2,7 @@ module df;
 
 import std.stdio;
 import std.file : readText;
-import std.string : split, toStringz;
+import std.string : split, toStringz, splitLines, startsWith;
 import std.algorithm : canFind;
 import std.format : format;
 import std.conv : to;
@@ -18,7 +18,7 @@ Mount[] getMounts() {
     Mount[] mounts;
     try {
         auto data = readText("/proc/mounts");
-        foreach(line; data.splitLines) {
+        foreach(line; data.splitLines()) {
             auto parts = line.split();
             if(parts.length >= 3)
                 mounts ~= Mount(parts[0], parts[1], parts[2]);

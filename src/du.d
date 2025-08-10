@@ -5,6 +5,7 @@ import std.file : dirEntries, DirEntry, SpanMode;
 import std.conv : to;
 import std.path : buildNormalizedPath;
 import std.format : format;
+import std.string : startsWith;
 
 struct Options {
     bool human;

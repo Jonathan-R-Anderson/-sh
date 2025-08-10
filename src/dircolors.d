@@ -2,7 +2,7 @@ module dircolors;
 
 import std.stdio;
 import std.file : readText;
-import std.string : splitLines, strip, join;
+import std.string : splitLines, strip, join, startsWith;
 import std.algorithm : filter, map;
 
 immutable string defaultDB = `
@@ -48,7 +48,7 @@ void dircolorsCommand(string[] tokens)
         writeln(db);
         return;
     }
-    auto entries = db.splitLines
+    auto entries = db.splitLines()
         .map!(l => l.strip)
         .filter!(l => l.length && l[0] != '#')
         .join(":");

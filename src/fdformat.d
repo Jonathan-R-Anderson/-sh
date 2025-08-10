@@ -1,7 +1,7 @@
 module fdformat;
 
 import std.stdio;
-import std.string : join;
+import std.string : join, toStringz;
 import core.stdc.stdlib : system;
 
 /// Execute the system fdformat command with the provided arguments.
@@ -13,7 +13,7 @@ void fdformatCommand(string[] tokens)
     }
     string args = tokens[1 .. $].join(" ");
     string cmd = "fdformat" ~ (args.length ? " " ~ args : "");
-    auto rc = system(cmd);
+    auto rc = system(cmd.toStringz);
     if(rc != 0)
         writeln("fdformat failed with code ", rc);
 }

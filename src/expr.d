@@ -86,7 +86,7 @@ private Value parsePrimary(string[] tokens, ref size_t idx) {
         try {
             auto rx = regex("^" ~ r);
             auto m = matchFirst(s, rx);
-            if(m is null)
+            if(m.empty)
                 return makeNumber(0);
             if(m.captures.length > 1)
                 return makeString(m.captures[1]);
@@ -114,7 +114,7 @@ private Value parseMatchOp(string[] tokens, ref size_t idx) {
         try {
             auto rx = regex("^" ~ r);
             auto m = matchFirst(s, rx);
-            if(m is null) {
+            if(m.empty) {
                 val = makeNumber(0);
             } else if(m.captures.length > 1) {
                 val = makeString(m.captures[1]);
@@ -136,7 +136,7 @@ private Value parseMul(string[] tokens, ref size_t idx) {
         if(!val.isNumber || !rhs.isNumber) {
             val = makeNumber(0);
         } else {
-            final switch(op) {
+            switch(op) {
                 case "*": val.num *= rhs.num; break;
                 case "/": val.num = rhs.num == 0 ? 0 : val.num / rhs.num; break;
                 case "%": val.num = rhs.num == 0 ? 0 : val.num % rhs.num; break;
@@ -155,7 +155,7 @@ private Value parseAdd(string[] tokens, ref size_t idx) {
         if(!val.isNumber || !rhs.isNumber) {
             val = makeNumber(0);
         } else {
-            final switch(op) {
+            switch(op) {
                 case "+": val.num += rhs.num; break;
                 case "-": val.num -= rhs.num; break;
                 default: break;
@@ -175,7 +175,7 @@ private Value parseCompare(string[] tokens, ref size_t idx) {
             bool res = false;
             if(val.isNumber && rhs.isNumber) {
                 auto a = val.num; auto b = rhs.num;
-                final switch(op) {
+                switch(op) {
                     case "<": res = a < b; break;
                     case "<=": res = a <= b; break;
                     case "=": res = a == b; break;
@@ -188,7 +188,7 @@ private Value parseCompare(string[] tokens, ref size_t idx) {
             } else {
                 auto a = val.isNumber ? to!string(val.num) : val.str;
                 auto b = rhs.isNumber ? to!string(rhs.num) : rhs.str;
-                final switch(op) {
+                switch(op) {
                     case "<": res = a < b; break;
                     case "<=": res = a <= b; break;
                     case "=": res = a == b; break;

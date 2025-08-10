@@ -3,6 +3,7 @@ module dparser;
 import std.stdio;
 import std.array : array;
 import std.algorithm;
+import std.conv : to;
 import dlexer;
 
 alias Action = long delegate(long, long);
@@ -39,7 +40,7 @@ class Parser {
         while (peek("PLUS") || peek("MINUS")) {
             auto op = consume(tokens[pos].type);
             long rhs = parseTerm();
-            final switch (op.type) {
+            switch (op.type) {
                 case "PLUS":  value += rhs; break;
                 case "MINUS": value -= rhs; break;
                 default: break;
@@ -53,7 +54,7 @@ class Parser {
         while (peek("TIMES") || peek("DIVIDE")) {
             auto op = consume(tokens[pos].type);
             long rhs = parseFactor();
-            final switch (op.type) {
+            switch (op.type) {
                 case "TIMES":  value *= rhs; break;
                 case "DIVIDE": value /= rhs; break;
                 default: break;

@@ -3,7 +3,7 @@ module date;
 import std.stdio;
 import std.datetime : Clock, SysTime, DateTime;
 import std.conv : to;
-import std.string : split;
+import std.string : split, startsWith;
 
 SysTime parseDateString(string s) {
     try {

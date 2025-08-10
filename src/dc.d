@@ -8,7 +8,7 @@ string dcEval(string expr) {
     BigInt[] stack;
     string output;
     foreach(token; split(expr)) {
-        final switch(token) {
+        switch(token) {
             case "":
                 break;
             case "+":

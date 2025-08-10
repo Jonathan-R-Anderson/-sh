@@ -4,6 +4,8 @@ import dlexer;
 import dparser;
 import std.regex : regex;
 import std.stdio;
+import std.algorithm : filter;
+import std.array : array;
 
 /// Run the arithmetic parser example.
 void exampleMain(string[] args) {

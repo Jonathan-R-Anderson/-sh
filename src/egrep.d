@@ -3,7 +3,7 @@ module egrep;
 import std.stdio;
 import std.file : readText;
 import std.regex : regex, matchFirst;
-import std.string : toLower;
+import std.string : toLower, startsWith, splitLines;
 import std.conv : to;
 
 void egrepCommand(string[] tokens)

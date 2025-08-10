@@ -2,7 +2,7 @@ module expand;
 
 import std.stdio;
 import std.file : readText;
-import std.string : split, replace, splitLines;
+import std.string : split, replace, splitLines, startsWith;
 import std.conv : to;
 import std.array : appender, Appender;
 import std.ascii : isDigit;
@@ -60,7 +60,7 @@ void expandFile(string name, int[] stops, bool initialOnly) {
             writeln(expandLine(line.idup, stops, initialOnly));
     } else {
         try {
-            foreach(line; readText(name).splitLines)
+            foreach(line; readText(name).splitLines())
                 writeln(expandLine(line, stops, initialOnly));
         } catch(Exception) {
             writeln("expand: cannot read ", name);

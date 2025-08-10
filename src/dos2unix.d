@@ -2,7 +2,7 @@ module dos2unix;
 
 import std.stdio;
 import std.file : readText, write;
-import std.string : replace;
+import std.string : replace, startsWith;
 
 void convertFile(string inFile, string outFile, bool keepDate, bool quiet)
 {
