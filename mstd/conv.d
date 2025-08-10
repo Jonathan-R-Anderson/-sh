@@ -3,7 +3,7 @@ module mstd.conv;
 import core.stdc.stdlib : atoi, strtol, strtoll, strtod;
 import core.stdc.stdio : sprintf;
 import std.bigint : BigInt;
-import std.conv : to as stdTo;
+import std.conv : stdTo = to;
 
 class ConvException : Exception
 {
