@@ -38,7 +38,8 @@ Pattern parsePattern(string p) {
 size_t findRegex(string[] lines, size_t start, string re) {
     auto r = regex(re);
     foreach(i; start .. lines.length) {
-        if(matchFirst(lines[i], r)) return i;
+        auto m = matchFirst(lines[i], r);
+        if(!m.empty) return i;
     }
     return size_t.max; // not found
 }
