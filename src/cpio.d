@@ -3,6 +3,10 @@ module cpio;
 import core.stdc.stdio : FILE, fopen, fread, fwrite, fclose, ftell, fseek, feof, SEEK_SET;
 import core.stdc.stdlib : malloc, free;
 import core.stdc.string : strlen, strcmp, memcmp;
+// Additional modules for archive creation
+import std.file : read;
+import std.format : format;
+import std.string : toStringz;
 
 // Entry structure for extracted files
 struct Entry {
@@ -22,7 +26,7 @@ int hexNibble(char c) {
     return 0;
 }
 
-@safe nothrow @nogc
+@system nothrow @nogc
 uint hexToUint(const(char)* hex) {
     uint val = 0;
     foreach (i; 0 .. 8) {
@@ -63,7 +67,7 @@ int readArchive(const(char)* archive, Entry* outEntries, int maxEntries) {
         magic[6] = '\0';
 
         // Only support 'newc' ("070701")
-        if (memcmp(magic.ptr, "070701", 6) != 0) {
+        if (memcmp(magic.ptr, cast(const void*)"070701".ptr, 6) != 0) {
             // If we didn’t reach EOF, bail; otherwise we’re done
             break;
         }
@@ -145,4 +149,51 @@ void extractArchive(const(char)* archive) {
         if (e.name) free(cast(void*)e.name);
         if (e.data) free(e.data);
     }
+}
+
+// Create a "newc" cpio archive from a list of files
+void createArchive(string archive, string[] files) {
+    // Open output file
+    FILE* f = fopen(archive.toStringz, "wb");
+    if(f is null) return;
+    scope(exit) fclose(f);
+
+    // Helper to write padding to 4-byte boundary
+    auto writePad = (size_t len) {
+        size_t rem = len & 3;
+        if(rem) {
+            ubyte[3] pad = void;
+            fwrite(pad.ptr, 1, 4 - rem, f);
+        }
+    };
+
+    // Helper to write an archive header for a file
+    void writeHeader(string name, uint mode, uint size) {
+        auto header = format("070701%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x",
+                              0, mode, 0, 0, 0, 0, size, 0, 0, 0, 0, cast(uint)name.length + 1, 0);
+        fwrite(header.ptr, 1, header.length, f);
+        fwrite(name.ptr, 1, name.length, f);
+        fwrite("\0".ptr, 1, 1, f);
+        writePad(name.length + 1);
+    }
+
+    foreach(file; files) {
+        // Read file contents
+        ubyte[] data;
+        try {
+            data = cast(ubyte[])read(file);
+        } catch(Exception) {
+            continue; // skip unreadable files
+        }
+        // 0100644 file mode in octal
+        enum uint defaultMode = 0x81A4;
+        writeHeader(file, defaultMode, cast(uint)data.length);
+        if(data.length) {
+            fwrite(data.ptr, 1, data.length, f);
+            writePad(data.length);
+        }
+    }
+
+    // Write trailer record
+    writeHeader("TRAILER!!!", 0, 0);
 }
