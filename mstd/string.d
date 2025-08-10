@@ -7,7 +7,10 @@ const(char)* toStringz(string s)
     return s.ptr;
 }
 
-string[] split(string s, string delim)
+// ``split`` in the real Phobos library offers an overload that splits on
+// whitespace when no delimiter is provided.  Several utilities expect this
+// behaviour, so provide a default delimiter of a single space to emulate it.
+string[] split(string s, string delim = " ")
 {
     string[] result;
     size_t start = 0;
