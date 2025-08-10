@@ -8,10 +8,7 @@ string dcEval(string expr) {
     BigInt[] stack;
     string output;
     foreach(token; split(expr)) {
-        // The original implementation used a ``final switch`` which forbids a
-        // ``default`` clause.  We need a fallback case for arbitrary tokens, so
-        // use a regular ``switch`` instead.
-        switch(token) {
+        final switch(token) {
             case "":
                 break;
             case "+":

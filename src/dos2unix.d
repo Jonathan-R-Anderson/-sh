@@ -2,8 +2,7 @@ module dos2unix;
 
 import std.stdio;
 import std.file : readText, write;
-// `replace` for line ending conversion and `startsWith` for option parsing.
-import std.string : replace, startsWith;
+import std.string : replace;
 
 void convertFile(string inFile, string outFile, bool keepDate, bool quiet)
 {

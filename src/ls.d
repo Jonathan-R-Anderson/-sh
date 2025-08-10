@@ -3,6 +3,7 @@ module ls;
 import std.stdio;
 import std.file : dirEntries, DirEntry, SpanMode;
 import std.algorithm : sort;
+import std.string : format;
 import std.datetime : unixTimeToStdTime, SysTime;
 import core.sys.posix.sys.stat : S_IFMT, S_IFDIR, S_IFLNK, S_IFCHR, S_IFBLK, S_IFIFO, S_IFSOCK,
     S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, S_IROTH, S_IWOTH, S_IXOTH;

@@ -4,7 +4,7 @@ import std.stdio;
 import std.file : readText;
 import std.regex : regex, matchFirst;
 import std.string : split, splitLines, stripRight;
-import std.algorithm : canFind;
+import std.algorithm.searching : canFind;
 import std.conv : to;
 
 /// Minimal awk implementation supporting simple print statements.

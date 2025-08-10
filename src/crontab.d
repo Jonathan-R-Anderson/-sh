@@ -4,7 +4,7 @@ import std.stdio;
 import std.file : readText, write, exists, remove;
 import std.process : environment;
 import core.stdc.stdlib : system;
-import std.string : startsWith, toStringz;
+import std.string : startsWith;
 
 void editFile(string path)
 {
@@ -15,7 +15,7 @@ void editFile(string path)
         editor = e2;
     else
         editor = "vi";
-    system((editor ~ " " ~ path).toStringz());
+    system(editor ~ " " ~ path);
 }
 
 void installFile(string src, string dest)

@@ -6,31 +6,13 @@ The implementation is intentionally small and demonstrates how one might begin t
 
 ## Building
 
-A D compiler such as [`anonymos-dmd`](https://github.com/Jonathan-R-Anderson/anonymos-dmd) or `ldc2` is required. The interpreter can now be
-built with the full D runtime using the `build_full.sh` helper script.
-The build scripts accept the target system as the first argument or via
-the `SYSTEM` environment variable. Pass `linux` to build with the system
-`dmd` compiler instead of the custom one:
+A D compiler such as `dmd` or `ldc2` is required. To cross compile for a specific target, supply the desired architecture flags to the compiler. For example:
 
 ```bash
-./build_full.sh linux       # or: SYSTEM=linux ./build_full.sh
+ldc2 -mtriple=<target> src/*.d -of=interpreter
 ```
 
-If no system is specified the scripts fall back to `anonymos-dmd`.
-Set the `DC` environment variable to override the compiler if you prefer
-`ldc2` or another compatible D compiler.
-## Installing as a login shell
-
-To build and install the interpreter so it can be used as a login shell run:
-
-```bash
-./install.sh linux     # or: SYSTEM=linux ./install.sh
-```
-
-This script builds the binary, copies it to /usr/local/bin/dshell, and ensures
-/etc/shells includes the new path so you can select it with `chsh`.
-The build and install helpers are compatible with both Bash and Z shell
-environments.
+Replace `<target>` with the appropriate triple for the operating system described in the `internetcomputer` repository.
 
 ## Usage
 

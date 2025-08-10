@@ -2,10 +2,7 @@ module df;
 
 import std.stdio;
 import std.file : readText;
-// Additional string utilities used throughout this module
-// `splitLines` is needed to iterate over /proc/mounts and `startsWith`
-// is used for option parsing below.
-import std.string : split, toStringz, splitLines, startsWith;
+import std.string : split, toStringz;
 import std.algorithm : canFind;
 import std.format : format;
 import std.conv : to;

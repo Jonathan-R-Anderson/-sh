@@ -3,8 +3,7 @@ module dd;
 import std.stdio;
 import std.file : exists;
 import std.conv : to;
-import std.string : split, indexOf, endsWith, toStringz;
-import core.stdc.stdio : fopen, fclose, fseek, fwrite, FILE, SEEK_SET;
+import std.string : split, indexOf, endsWith;
 
 size_t parseBytes(string s)
 {
@@ -46,8 +45,7 @@ void ddCommand(string[] tokens)
         if(idx < 0) continue;
         auto key = t[0 .. idx];
         auto val = t[idx+1 .. $];
-        // Allow a default case, so a regular switch is required.
-        switch(key) {
+        final switch(key) {
             case "if": infile = val; break;
             case "of": outfile = val; break;
             case "bs":
@@ -62,7 +60,7 @@ void ddCommand(string[] tokens)
             case "oseek":
                 seek = to!size_t(val); break;
             case "conv":
-                foreach(c; split(val, ","))
+                foreach(c; val.split(','))
                     if(c == "notrunc") notrunc = true;
                 break;
             default:
@@ -70,49 +68,49 @@ void ddCommand(string[] tokens)
         }
     }
 
-    FILE* fin;
+    File fin;
     bool closeIn = true;
     if(infile.length == 0 || infile == "-") {
         fin = stdin;
         closeIn = false;
     } else {
-        fin = fopen(infile.toStringz(), "rb");
-        if(fin is null) { writeln("dd: cannot read " ~ infile); return; }
+        try { fin = File(infile, "rb"); } catch(Exception) { writeln("dd: cannot read " ~ infile); return; }
     }
 
-    FILE* fout;
+    File fout;
     bool closeOut = true;
     if(outfile.length == 0 || outfile == "-") {
         fout = stdout;
         closeOut = false;
     } else {
-        if(notrunc) {
-            if(exists(outfile))
-                fout = fopen(outfile.toStringz(), "r+b");
-            else
-                fout = fopen(outfile.toStringz(), "w+b");
-        } else {
-            fout = fopen(outfile.toStringz(), "wb");
-        }
-        if(fout is null) { writeln("dd: cannot write " ~ outfile); if(closeIn) fclose(fin); return; }
+        try {
+            if(notrunc) {
+                if(exists(outfile))
+                    fout = File(outfile, "r+b");
+                else
+                    fout = File(outfile, "w+b");
+            } else {
+                fout = File(outfile, "wb");
+            }
+        } catch(Exception) { writeln("dd: cannot write " ~ outfile); if(closeIn) fin.close(); return; }
     }
 
     if(skip > 0) {
-        fseek(fin, cast(long)(skip * bs), SEEK_SET);
+        fin.seek(cast(long)(skip * bs), SeekPos.Set);
     }
     if(seek > 0) {
-        fseek(fout, cast(long)(seek * bs), SEEK_SET);
+        fout.seek(cast(long)(seek * bs), SeekPos.Set);
     }
 
     size_t blocks = 0;
-    foreach(chunk; byChunk(fin, bs)) {
+    foreach(chunk; fin.byChunk(bs)) {
         if(blocks >= count) break;
-        fwrite(chunk.ptr, 1, chunk.length, fout);
+        fout.rawWrite(chunk);
         blocks++;
         if(chunk.length < bs) break;
     }
 
-    if(closeIn) fclose(fin);
-    if(closeOut) fclose(fout);
+    if(closeIn) fin.close();
+    if(closeOut) fout.close();
 }
 

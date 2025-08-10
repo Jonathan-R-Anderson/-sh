@@ -6,7 +6,7 @@ import std.datetime : Clock, SysTime;
 import core.stdc.stdlib : system;
 import std.conv : to;
 import std.algorithm : splitter;
-import std.string : split, indexOf, strip, startsWith, join, splitLines, toStringz;
+import std.string : split, indexOf, strip, startsWith, join, splitLines;
 import core.thread : Thread;
 import core.time : dur;
 
@@ -80,18 +80,16 @@ void runCron(string path) {
     int lastMin = -1;
     for(;;) {
         auto now = Clock.currTime();
-        import core.stdc.time : localtime, tm;
-        auto tmPtr = localtime(&now);
-        tm t = *tmPtr;
-        if(t.tm_min != lastMin) {
-            lastMin = t.tm_min;
+        if(now.minute != lastMin) {
+            lastMin = now.minute;
             foreach(job; jobs) {
-                if(job.mins[t.tm_min] &&
-                   job.hours[t.tm_hour] &&
-                   job.dom[t.tm_mday] &&
-                   job.months[t.tm_mon + 1] &&
-                   job.dow[t.tm_wday]) {
-                   system(job.cmd.toStringz());
+                if(job.mins[now.minute] &&
+                   job.hours[now.hour] &&
+                   job.dom[now.day] &&
+                   job.months[now.month] &&
+                   job.dow[now.dayOfWeek]) {
+                   import core.stdc.string : toStringz;
+                   system(job.cmd.toStringz);
                 }
             }
         }

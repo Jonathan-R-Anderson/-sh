@@ -11,7 +11,7 @@ import core.stdc.stdlib : system;
 version(Posix) import core.sys.posix.unistd : execvp;
 version(Posix) extern(C) int chroot(const char* path);
 import std.regex : regex, matchFirst;
-import std.path : globMatch, dirName;
+import std.path : globMatch;
 import std.conv : to;
 import core.thread : Thread;
 import std.datetime : Clock, SysTime;
@@ -854,7 +854,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             return;
         }
         auto path = tokens[1];
-        auto dir = dirName(path);
+        auto dir = std.path.dirName(path);
         if(dir.length == 0) dir = ".";
         writeln(dir);
     } else if(op == "animal_case") {
@@ -1020,7 +1020,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
         foreach(dir; tokens[1 .. $]) {
             try {
-                mkdir(dir);
+                std.file.mkdir(dir);
             } catch(Exception e) {
                 writeln("mkdir: cannot create directory ", dir);
             }
@@ -1032,7 +1032,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
         foreach(dir; tokens[1 .. $]) {
             try {
-                rmdir(dir);
+                std.file.rmdir(dir);
             } catch(Exception e) {
                 writeln("rmdir: failed to remove ", dir);
             }
@@ -1056,7 +1056,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             return;
         }
         try {
-            copy(tokens[1], tokens[2]);
+            std.file.copy(tokens[1], tokens[2]);
         } catch(Exception e) {
             writeln("cp: failed to copy");
         }
@@ -1066,7 +1066,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             return;
         }
         try {
-            rename(tokens[1], tokens[2]);
+            std.file.rename(tokens[1], tokens[2]);
         } catch(Exception e) {
             writeln("mv: failed to move");
         }
@@ -1077,7 +1077,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
         foreach(f; tokens[1 .. $]) {
             try {
-                remove(f);
+                std.file.remove(f);
             } catch(Exception e) {
                 writeln("rm: cannot remove ", f);
             }

@@ -21,16 +21,16 @@ Pattern parsePattern(string p) {
         pat.isRegex = true;
         pat.createFile = p[0] == '/';
         auto rest = p[1 .. $];
-        auto idxInt = rest.indexOf('/');
-        size_t idx = idxInt < 0 ? rest.length : cast(size_t) idxInt;
+        auto idx = rest.indexOf('/');
+        if(idx < 0) idx = rest.length;
         pat.regexStr = rest[0 .. idx];
         if(idx + 1 <= rest.length) {
-            auto off = rest[idx + 1 .. $];
+            auto off = rest[idx+1 .. $];
             if(off.length) pat.offset = to!int(off);
         }
     } else {
         pat.isRegex = false;
-        pat.lineNum = cast(size_t) to!long(p);
+        pat.lineNum = to!size_t(p);
     }
     return pat;
 }
@@ -38,8 +38,7 @@ Pattern parsePattern(string p) {
 size_t findRegex(string[] lines, size_t start, string re) {
     auto r = regex(re);
     foreach(i; start .. lines.length) {
-        auto m = matchFirst(lines[i], r);
-        if(!m.empty) return i;
+        if(matchFirst(lines[i], r)) return i;
     }
     return size_t.max; // not found
 }

@@ -9,7 +9,7 @@ import std.ascii : isDigit;
 import std.algorithm;
 import std.array;
 import std.conv : to;
-import std.utf : toUTF8;
+import std.utf;
 import std.file : readText, copy;
 import std.parallelism;
 import cpio : createArchive, extractArchive;
@@ -167,7 +167,7 @@ string unescape(string s) {
                         hx ~= s[j]; j++; }
                     if(hx.length) {
                         dchar val = cast(dchar)to!int("0x" ~ hx);
-                        result ~= toUTF8(val);
+                        result ~= std.utf.toUTF8(val);
                         i = j - 1;
                     } else result ~= n;
                     break; }
@@ -368,7 +368,7 @@ Value quoteValue(Expr e);
 Expr valueToExpr(Value v);
 Expr macroExpand(Expr e);
 
-Rule[] rules = [
+immutable Rule[] rules = [
     Rule("HASHMAP", regex("#M\\(")),
     Rule("HASHLPAREN", regex("#\\(")),
     Rule("LPAREN", regex("\\(")),

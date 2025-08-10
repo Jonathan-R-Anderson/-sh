@@ -3,8 +3,7 @@ module ddrescue;
 import std.stdio;
 import std.file : exists, readText, append, write;
 import std.conv : to;
-import std.string : split, startsWith, toStringz;
-import core.stdc.stdio : fopen, fclose, fseek, fread, fwrite, FILE, SEEK_SET;
+import std.string : split;
 
 size_t parseSize(string s)
 {
@@ -42,20 +41,20 @@ void ddrescueCommand(string[] tokens)
     bool verbose = false;
 
     size_t idx = 1;
-    while(idx < tokens.length && startsWith(tokens[idx], "-")) {
+    while(idx < tokens.length && tokens[idx].startsWith("-")) {
         auto t = tokens[idx];
-        if(startsWith(t, "-b=")) block = parseSize(t[3 .. $]);
-        else if(startsWith(t, "--block-size=")) block = parseSize(t[13 .. $]);
-        else if(startsWith(t, "-i=")) ipos = parseSize(t[3 .. $]);
-        else if(startsWith(t, "--input-position=")) ipos = parseSize(t[17 .. $]);
-        else if(startsWith(t, "-o=")) opos = parseSize(t[3 .. $]);
-        else if(startsWith(t, "--output-position=")) opos = parseSize(t[18 .. $]);
-        else if(startsWith(t, "-s=")) maxSize = parseSize(t[3 .. $]);
-        else if(startsWith(t, "--max-size=")) maxSize = parseSize(t[11 .. $]);
-        else if(startsWith(t, "-e=")) maxErrors = to!size_t(t[3 .. $]);
-        else if(startsWith(t, "--max-errors=")) maxErrors = to!size_t(t[13 .. $]);
-        else if(startsWith(t, "-r=")) maxRetries = to!int(t[3 .. $]);
-        else if(startsWith(t, "--max-retries=")) maxRetries = to!int(t[14 .. $]);
+        if(t.startsWith("-b=")) block = parseSize(t[3 .. $]);
+        else if(t.startsWith("--block-size=")) block = parseSize(t[13 .. $]);
+        else if(t.startsWith("-i=")) ipos = parseSize(t[3 .. $]);
+        else if(t.startsWith("--input-position=")) ipos = parseSize(t[17 .. $]);
+        else if(t.startsWith("-o=")) opos = parseSize(t[3 .. $]);
+        else if(t.startsWith("--output-position=")) opos = parseSize(t[18 .. $]);
+        else if(t.startsWith("-s=")) maxSize = parseSize(t[3 .. $]);
+        else if(t.startsWith("--max-size=")) maxSize = parseSize(t[11 .. $]);
+        else if(t.startsWith("-e=")) maxErrors = to!size_t(t[3 .. $]);
+        else if(t.startsWith("--max-errors=")) maxErrors = to!size_t(t[13 .. $]);
+        else if(t.startsWith("-r=")) maxRetries = to!int(t[3 .. $]);
+        else if(t.startsWith("--max-retries=")) maxRetries = to!int(t[14 .. $]);
         else if(t == "-v" || t == "--verbose") verbose = true;
         else if(t == "-q" || t == "--quiet") verbose = false;
         else break;
@@ -71,18 +70,18 @@ void ddrescueCommand(string[] tokens)
         return;
     }
 
-    FILE* fin = fopen(infile.toStringz(), "rb");
-    if(fin is null) { writeln("ddrescue: cannot read " ~ infile); return; }
+    File fin;
+    File fout;
+    try { fin = File(infile, "rb"); } catch(Exception) { writeln("ddrescue: cannot read " ~ infile); return; }
+    try {
+        if(exists(outfile))
+            fout = File(outfile, "r+b");
+        else
+            fout = File(outfile, "w+b");
+    } catch(Exception) { writeln("ddrescue: cannot write " ~ outfile); fin.close(); return; }
 
-    FILE* fout;
-    if(exists(outfile))
-        fout = fopen(outfile.toStringz(), "r+b");
-    else
-        fout = fopen(outfile.toStringz(), "w+b");
-    if(fout is null) { writeln("ddrescue: cannot write " ~ outfile); fclose(fin); return; }
-
-    fseek(fin, cast(long)ipos, SEEK_SET);
-    fseek(fout, cast(long)opos, SEEK_SET);
+    fin.seek(cast(long)ipos, SeekPos.Set);
+    fout.seek(cast(long)opos, SeekPos.Set);
 
     ubyte[] buf;
     buf.length = block;
@@ -96,25 +95,29 @@ void ddrescueCommand(string[] tokens)
         size_t n = 0;
         bool readOk = false;
         foreach(i; 0 .. maxRetries + 1) {
-            n = fread(buf.ptr, 1, toRead, fin);
-            if(n == toRead) { readOk = true; break; }
-            if(i == maxRetries) {
-                errors++;
-                logEntry(logFile, "error " ~ to!string(ipos) ~ " " ~ to!string(block));
+            try {
+                n = fin.rawRead(buf[0 .. toRead]);
+                readOk = true;
                 break;
+            } catch(Exception e) {
+                if(i == maxRetries) {
+                    errors++;
+                    logEntry(logFile, "error " ~ to!string(ipos) ~ " " ~ to!string(block));
+                    break;
+                }
             }
         }
         if(!readOk) {
             if(errors > maxErrors) break;
             ipos += block;
             opos += block;
-            fseek(fin, cast(long)ipos, SEEK_SET);
-            fseek(fout, cast(long)opos, SEEK_SET);
+            fin.seek(cast(long)ipos, SeekPos.Set);
+            fout.seek(cast(long)opos, SeekPos.Set);
             copied += block;
             continue;
         }
         if(n == 0) break;
-        fwrite(buf.ptr, 1, n, fout);
+        fout.rawWrite(buf[0 .. n]);
         logEntry(logFile, "ok " ~ to!string(ipos) ~ " " ~ to!string(n));
         ipos += n;
         opos += n;
@@ -122,8 +125,8 @@ void ddrescueCommand(string[] tokens)
         if(n < toRead) break;
     }
 
-    fclose(fin);
-    fclose(fout);
+    fin.close();
+    fout.close();
 
     if(verbose)
         writeln("ddrescue: copied " ~ to!string(copied) ~ " bytes");

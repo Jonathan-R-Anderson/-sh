@@ -2,7 +2,7 @@ module fgrep;
 
 import std.stdio;
 import std.file : readText;
-import std.algorithm : canFind;
+import std.algorithm.searching : canFind;
 import std.string : toLower;
 import std.conv : to;
 

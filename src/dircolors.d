@@ -2,8 +2,7 @@ module dircolors;
 
 import std.stdio;
 import std.file : readText;
-// Use `startsWith` for option parsing in addition to basic string helpers.
-import std.string : splitLines, strip, join, startsWith;
+import std.string : splitLines, strip, join;
 import std.algorithm : filter, map;
 
 immutable string defaultDB = `
