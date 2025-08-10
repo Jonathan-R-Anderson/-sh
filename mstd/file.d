@@ -13,6 +13,7 @@ import core.stdc.stdlib : malloc, free;
 import core.stdc.stdio : fopen, fclose, fread, fwrite;
 import core.stdc.string : strlen;
 import mstd.string : toStringz;
+import std.conv : octal;
 
 struct DirEntry { string name; }
 
@@ -120,10 +121,10 @@ string readLink(string path)
 /// ``0777`` like the POSIX ``mkdir``).  This is a small wrapper around the
 /// POSIX call to keep the public API simple.
 ///
-/// D's compiler version in this project does not support the ``0o`` prefix
-/// for octal literals, so we use the traditional leading ``0`` notation
-/// instead.
-void mkdir(string path, int mode = 0777)
+/// Older D versions allowed a leading ``0`` to denote octal literals.  That
+/// notation has been removed, so we use ``std.conv.octal`` to express the
+/// default permission bits.
+void mkdir(string path, int mode = octal!"777")
 {
     posix_mkdir(path.toStringz(), mode);
 }
