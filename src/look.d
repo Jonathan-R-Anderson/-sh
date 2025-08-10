@@ -1,11 +1,11 @@
 module look;
 
-import mstd.stdio;
-import mstd.string : toLower, strip;
-import mstd.file : readText;
-import mstd.stdio : File;
-import mstd.algorithm : filter;
-import mstd.ascii : isAlphaNum;
+import std.stdio;
+import std.string : toLower, strip;
+import std.file : readText;
+import std.stdio : File;
+import std.algorithm : filter;
+import std.ascii : isAlphaNum;
 
 void lookCommand(string[] tokens)
 {

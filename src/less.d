@@ -1,8 +1,8 @@
 module less;
 
-import mstd.stdio;
-import mstd.file : readText;
-import mstd.algorithm : min;
+import std.stdio;
+import std.file : readText;
+import std.algorithm : min;
 
 /// Very small pager implementation.
 void lessCommand(string[] tokens)

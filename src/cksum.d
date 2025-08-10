@@ -1,7 +1,7 @@
 module cksum;
 
-import mstd.stdio;
-import mstd.file : read;
+import std.stdio;
+import std.file : read;
 
 private immutable uint[256] crcTable = generateTable();
 

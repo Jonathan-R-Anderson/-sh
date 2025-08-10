@@ -1,9 +1,9 @@
 module ddrescue;
 
-import mstd.stdio;
-import mstd.file : exists, readText, append, write;
-import mstd.conv : to;
-import mstd.string : split, startsWith, toStringz;
+import std.stdio;
+import std.file : exists, readText, append, write;
+import std.conv : to;
+import std.string : split, startsWith, toStringz;
 import core.stdc.stdio : fopen, fclose, fseek, fread, fwrite, FILE, SEEK_SET;
 
 size_t parseSize(string s)

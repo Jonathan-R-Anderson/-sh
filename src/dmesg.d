@@ -1,8 +1,8 @@
 module dmesg;
 
-import mstd.stdio;
+import std.stdio;
 // `join` and `toStringz` help construct arguments for the C `system` call.
-import mstd.string : join, toStringz;
+import std.string : join, toStringz;
 import core.stdc.stdlib : system;
 
 /// Execute the system dmesg command with the provided arguments.

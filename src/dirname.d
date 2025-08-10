@@ -1,7 +1,7 @@
 module dirname;
 
-import mstd.stdio;
-import mstd.path : dirName;
+import std.stdio;
+import std.path : dirName;
 
 void dirnameCommand(string[] tokens)
 {

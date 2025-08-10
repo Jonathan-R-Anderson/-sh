@@ -1,9 +1,9 @@
 module expr;
 
-import mstd.stdio;
-import mstd.conv : to, ConvException;
-import mstd.regex : regex, matchFirst;
-import mstd.string : indexOf;
+import std.stdio;
+import std.conv : to, ConvException;
+import std.regex : regex, matchFirst;
+import std.string : indexOf;
 
 struct Value {
     bool isNumber;

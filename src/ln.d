@@ -1,9 +1,9 @@
 module ln;
 
-import mstd.stdio;
-import mstd.file : remove, exists, isDir;
+import std.stdio;
+import std.file : remove, exists, isDir;
 import core.sys.posix.unistd : link, symlink;
-import mstd.path : baseName, buildPath;
+import std.path : baseName, buildPath;
 
 /// Simplified ln implementation supporting -s, -f and -v.
 void lnCommand(string[] tokens)

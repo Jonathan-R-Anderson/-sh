@@ -1,12 +1,12 @@
 module cron;
 
-import mstd.stdio;
-import mstd.file : readText, exists;
-import mstd.datetime : Clock, SysTime;
+import std.stdio;
+import std.file : readText, exists;
+import std.datetime : Clock, SysTime;
 import core.stdc.stdlib : system;
-import mstd.conv : to;
-import mstd.algorithm : splitter;
-import mstd.string : split, indexOf, strip, startsWith, join, splitLines, toStringz;
+import std.conv : to;
+import std.algorithm : splitter;
+import std.string : split, indexOf, strip, startsWith, join, splitLines, toStringz;
 import core.thread : Thread;
 import core.time : dur;
 

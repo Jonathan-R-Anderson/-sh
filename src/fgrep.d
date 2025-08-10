@@ -1,10 +1,10 @@
 module fgrep;
 
-import mstd.stdio;
-import mstd.file : readText;
-import mstd.algorithm : canFind;
-import mstd.string : toLower;
-import mstd.conv : to;
+import std.stdio;
+import std.file : readText;
+import std.algorithm : canFind;
+import std.string : toLower;
+import std.conv : to;
 
 void fgrepCommand(string[] tokens)
 {

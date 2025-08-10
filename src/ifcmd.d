@@ -1,7 +1,7 @@
 module ifcmd;
 
-import mstd.stdio;
-import mstd.string : join, replace;
+import std.stdio;
+import std.string : join, replace;
 import core.stdc.stdlib : system;
 
 /// Evaluate a shell if statement using /bin/sh.

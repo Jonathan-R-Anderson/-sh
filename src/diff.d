@@ -1,12 +1,12 @@
 module diff;
 
-import mstd.stdio;
-import mstd.file : readText;
+import std.stdio;
+import std.file : readText;
 // String utilities plus `startsWith` for option parsing.
-import mstd.string : splitLines, toLower, strip, join, split, startsWith;
+import std.string : splitLines, toLower, strip, join, split, startsWith;
 // Algorithm helpers used for mapping and filtering ranges.
-import mstd.algorithm : max, map, filter;
-import mstd.array : array;
+import std.algorithm : max, map, filter;
+import std.array : array;
 
 struct DiffOp {
     char tag; // ' ' for same, '-' removed from first, '+' added in second

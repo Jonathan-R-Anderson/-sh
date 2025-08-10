@@ -1,10 +1,10 @@
 module fuser;
 
-import mstd.stdio;
-import mstd.file : dirEntries, readLink, exists;
-import mstd.path : baseName, buildPath;
+import std.stdio;
+import std.file : dirEntries, readLink, exists;
+import std.path : baseName, buildPath;
 import core.sys.posix.signal : kill, SIGKILL;
-import mstd.conv : to;
+import std.conv : to;
 import core.sys.posix.unistd : getpid;
 
 /// List processes using a given file. Supports -k to kill them.

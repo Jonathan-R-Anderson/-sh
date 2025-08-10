@@ -1,10 +1,10 @@
 module egrep;
 
-import mstd.stdio;
-import mstd.file : readText;
-import mstd.regex : regex, matchFirst;
-import mstd.string : toLower;
-import mstd.conv : to;
+import std.stdio;
+import std.file : readText;
+import std.regex : regex, matchFirst;
+import std.string : toLower;
+import std.conv : to;
 
 void egrepCommand(string[] tokens)
 {

@@ -1,9 +1,9 @@
 module cut;
 
-import mstd.stdio;
-import mstd.string : split, splitLines, join, indexOf, startsWith, stripRight;
-import mstd.file : readText;
-import mstd.conv : to;
+import std.stdio;
+import std.string : split, splitLines, join, indexOf, startsWith, stripRight;
+import std.file : readText;
+import std.conv : to;
 
 struct Range {
     size_t start;

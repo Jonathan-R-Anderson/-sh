@@ -1,9 +1,9 @@
 module fold;
 
-import mstd.stdio;
-import mstd.file : readText;
-import mstd.string : splitLines, lastIndexOf, stripRight;
-import mstd.conv : to;
+import std.stdio;
+import std.file : readText;
+import std.string : splitLines, lastIndexOf, stripRight;
+import std.conv : to;
 
 void foldLine(string line, size_t width, bool breakSpaces)
 {

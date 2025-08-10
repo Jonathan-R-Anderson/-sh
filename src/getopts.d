@@ -1,8 +1,8 @@
 module getopts;
 
-import mstd.stdio;
-import mstd.string : strip;
-import mstd.conv : to;
+import std.stdio;
+import std.string : strip;
+import std.conv : to;
 
 extern __gshared string[string] variables; // from interpreter
 

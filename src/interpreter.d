@@ -1,20 +1,20 @@
-import mstd.stdio;
-import mstd.string;
-import mstd.array;
-import mstd.algorithm;
+import std.stdio;
+import std.string;
+import std.array;
+import std.algorithm;
 import std.parallelism;
-import mstd.range;
-import mstd.file : chdir, getcwd, dirEntries, SpanMode, readText,
+import std.range;
+import std.file : chdir, getcwd, dirEntries, SpanMode, readText,
     copy, rename, remove, mkdir, rmdir, exists;
-import mstd.process : environment;
+import std.process : environment;
 import core.stdc.stdlib : system;
 version(Posix) import core.sys.posix.unistd : execvp;
 version(Posix) extern(C) int chroot(const char* path);
-import mstd.regex : regex, matchFirst;
-import mstd.path : globMatch;
-import mstd.conv : to;
+import std.regex : regex, matchFirst;
+import std.path : globMatch, dirName;
+import std.conv : to;
 import core.thread : Thread;
-import mstd.datetime : Clock, SysTime;
+import std.datetime : Clock, SysTime;
 import core.time : dur;
 import base32;
 import base64;
@@ -189,7 +189,7 @@ void runParallel(string input) {
 }
 
 string findInPath(string name) {
-    import mstd.file : exists;
+    import std.file : exists;
     auto searchPath = environment.get("PATH", "");
     foreach(p; searchPath.split(":")) {
         string candidate = p.length ? p ~ "/" ~ name : name;
@@ -282,7 +282,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         if(useDefaultPath)
             environment["PATH"] = "/bin:/usr/bin:/usr/local/bin";
 
-        import mstd.file : exists;
+        import std.file : exists;
 
         auto searchPath = environment.get("PATH", "");
         string cmdPath;
@@ -794,7 +794,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             return;
         }
         version(Posix) {
-            import mstd.string : toStringz;
+            import std.string : toStringz;
             import core.stdc.stdlib : exit;
             const(char)*[] args;
             foreach(t; tokens[1 .. $]) args ~= t.toStringz;
@@ -854,7 +854,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             return;
         }
         auto path = tokens[1];
-        auto dir = mstd.path.dirName(path);
+        auto dir = dirName(path);
         if(dir.length == 0) dir = ".";
         writeln(dir);
     } else if(op == "animal_case") {
@@ -1020,7 +1020,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
         foreach(dir; tokens[1 .. $]) {
             try {
-                mstd.file.mkdir(dir);
+                mkdir(dir);
             } catch(Exception e) {
                 writeln("mkdir: cannot create directory ", dir);
             }
@@ -1032,7 +1032,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
         foreach(dir; tokens[1 .. $]) {
             try {
-                mstd.file.rmdir(dir);
+                rmdir(dir);
             } catch(Exception e) {
                 writeln("rmdir: failed to remove ", dir);
             }
@@ -1056,7 +1056,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             return;
         }
         try {
-            mstd.file.copy(tokens[1], tokens[2]);
+            copy(tokens[1], tokens[2]);
         } catch(Exception e) {
             writeln("cp: failed to copy");
         }
@@ -1066,7 +1066,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             return;
         }
         try {
-            mstd.file.rename(tokens[1], tokens[2]);
+            rename(tokens[1], tokens[2]);
         } catch(Exception e) {
             writeln("mv: failed to move");
         }
@@ -1077,7 +1077,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
         foreach(f; tokens[1 .. $]) {
             try {
-                mstd.file.remove(f);
+                remove(f);
             } catch(Exception e) {
                 writeln("rm: cannot remove ", f);
             }
@@ -1200,7 +1200,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         if(device.startsWith("/dev/"))
             device = device[5 .. $];
         string sys = "/sys/block/" ~ device;
-        import mstd.file : exists, dirEntries;
+        import std.file : exists, dirEntries;
         if(!exists(sys)) {
             writeln("cfdisk: device /dev/" ~ device ~ " not found");
             return;
@@ -1656,7 +1656,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         } else if(tokens.length == 3 && tokens[1] == "-r") {
             keyBindings.remove(tokens[2]);
         } else if(tokens.length == 3 && tokens[1] == "-f") {
-            import mstd.file : readText;
+            import std.file : readText;
             try {
                 foreach(line; readText(tokens[2]).splitLines) {
                     auto trimmed = line.strip;

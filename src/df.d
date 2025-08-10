@@ -1,14 +1,14 @@
 module df;
 
-import mstd.stdio;
-import mstd.file : readText;
+import std.stdio;
+import std.file : readText;
 // Additional string utilities used throughout this module
 // `splitLines` is needed to iterate over /proc/mounts and `startsWith`
 // is used for option parsing below.
-import mstd.string : split, toStringz, splitLines, startsWith;
-import mstd.algorithm : canFind;
-import mstd.format : format;
-import mstd.conv : to;
+import std.string : split, toStringz, splitLines, startsWith;
+import std.algorithm : canFind;
+import std.format : format;
+import std.conv : to;
 import core.sys.posix.sys.statvfs;
 
 struct Mount {

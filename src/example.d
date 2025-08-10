@@ -2,8 +2,8 @@ module example;
 
 import dlexer;
 import dparser;
-import mstd.regex : regex;
-import mstd.stdio;
+import std.regex : regex;
+import std.stdio;
 
 /// Run the arithmetic parser example.
 void exampleMain(string[] args) {

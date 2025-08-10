@@ -1,15 +1,15 @@
 module md5sum;
 
-import mstd.stdio;
-import mstd.file : read;
-import mstd.digest.md;
+import std.stdio;
+import std.file : read;
+import std.digest.md;
 
 string hexDigest(const(ubyte)[] data)
 {
     auto ctx = MD5();
     ctx.put(data);
     auto dg = ctx.finish();
-    import mstd.array : appender;
+    import std.array : appender;
     auto app = appender!string();
     foreach(byte b; dg)
         app.put(format("%02x", b));

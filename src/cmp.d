@@ -1,9 +1,9 @@
 module cmp;
 
-import mstd.stdio;
-import mstd.file : read;
-import mstd.conv : to;
-import mstd.array : array;
+import std.stdio;
+import std.file : read;
+import std.conv : to;
+import std.array : array;
 
 private string formatChar(ubyte b)
 {
