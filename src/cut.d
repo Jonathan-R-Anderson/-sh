@@ -58,7 +58,7 @@ string cutBytes(string line, Range[] ranges) {
 string cutFields(string line, Range[] ranges, char delim, bool onlyDelim, string outDelim) {
     if(onlyDelim && line.indexOf(delim) < 0)
         return "";
-    auto fields = line.split(delim);
+    auto fields = line.split(to!string(delim));
     string[] outFields;
     foreach(i, f; fields) {
         if(inRanges(i+1, ranges)) outFields ~= f;
@@ -127,7 +127,7 @@ void cutCommand(string[] tokens) {
         idx++;
     }
 
-    if(outDelim.length == 0) outDelim = cast(string)delim;
+    if(outDelim.length == 0) outDelim = to!string(delim);
     if(useChars && !useBytes && charSpec.length) byteSpec = charSpec, useBytes=true;
     if(useFields && fieldSpec.length == 0) return; // nothing to select
     Range[] ranges;
@@ -152,7 +152,7 @@ void cutCommand(string[] tokens) {
         if(f == "-") {
             string line;
             while((line = readln()) !is null) {
-                auto l = line.stripRight("\n");
+                auto l = stripRight(line);
                 auto resultLine = processLine(l);
                 if(resultLine.length || !onlyDelim)
                     writeln(resultLine);
