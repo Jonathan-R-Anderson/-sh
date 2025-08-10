@@ -2,15 +2,15 @@ module lferepl;
 
 import dlexer;
 import dparser;
-import mstd.regex : regex;
-import mstd.stdio;
-import mstd.string;
-import mstd.ascii : isDigit;
-import mstd.algorithm;
-import mstd.array;
-import mstd.conv : to;
-import mstd.utf;
-import mstd.file : readText, copy;
+import std.regex : regex;
+import std.stdio;
+import std.string;
+import std.ascii : isDigit;
+import std.algorithm;
+import std.array;
+import std.conv : to;
+import std.utf : toUTF8;
+import std.file : readText, copy;
 import std.parallelism;
 import cpio : createArchive, extractArchive;
 import core.sync.mutex : Mutex;
@@ -167,7 +167,7 @@ string unescape(string s) {
                         hx ~= s[j]; j++; }
                     if(hx.length) {
                         dchar val = cast(dchar)to!int("0x" ~ hx);
-                        result ~= mstd.utf.toUTF8(val);
+                        result ~= toUTF8(val);
                         i = j - 1;
                     } else result ~= n;
                     break; }
@@ -1333,7 +1333,7 @@ Value evalList(Expr e) {
         if(cmd.length >= 2 && cmd[0] == '"' && cmd[$-1] == '"')
             cmd = cmd[1 .. $-1];
         version(Posix) {
-            import mstd.string : toStringz;
+            import std.string : toStringz;
             import core.stdc.stdlib : exit;
             const(char)*[] argv;
             argv ~= cmd.toStringz;

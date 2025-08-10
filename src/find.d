@@ -1,11 +1,11 @@
 module find;
 
-import mstd.stdio;
-import mstd.file : dirEntries, SpanMode, isFile, isDir;
-import mstd.path : baseName, buildPath;
-import mstd.algorithm : canFind;
-import mstd.path : globMatch;
-import mstd.conv : to;
+import std.stdio;
+import std.file : dirEntries, SpanMode, isFile, isDir;
+import std.path : baseName, buildPath;
+import std.algorithm : canFind;
+import std.path : globMatch;
+import std.conv : to;
 
 void search(string path, string pattern, bool usePattern, char ftype, int depth, int maxDepth)
 {

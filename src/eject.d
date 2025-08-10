@@ -1,7 +1,7 @@
 module eject;
 
-import mstd.stdio;
-import mstd.string : join;
+import std.stdio;
+import std.string : join;
 import core.stdc.stdlib : system;
 
 /// Execute the system eject command with the provided arguments.

@@ -1,7 +1,7 @@
 module file;
 
-import mstd.stdio;
-import mstd.file : read, exists, isDir;
+import std.stdio;
+import std.file : read, exists, isDir;
 
 bool isText(ubyte[] buf) {
     foreach(b; buf) {

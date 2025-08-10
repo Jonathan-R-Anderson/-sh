@@ -1,8 +1,8 @@
 module dlexer;
 
-import mstd.regex : regex, match, Captures, Regex;
-import mstd.array : array;
-import mstd.string : strip;
+import std.regex : regex, match, Captures, Regex;
+import std.array : array;
+import std.string : strip;
 
 /// Represents a lexical token with type and value.
 struct Token {

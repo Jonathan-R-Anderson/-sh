@@ -1,8 +1,8 @@
 module letcmd;
 
-import mstd.stdio;
-import mstd.string : split, replace;
-import mstd.conv : to;
+import std.stdio;
+import std.string : split, replace;
+import std.conv : to;
 import bc : bcEval;
 
 extern __gshared string[string] variables;

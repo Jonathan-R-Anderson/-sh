@@ -1,7 +1,7 @@
 module groupadd;
 
-import mstd.stdio;
-import mstd.string : join;
+import std.stdio;
+import std.string : join;
 import core.stdc.stdlib : system;
 
 /// Execute the system groupadd command with the provided arguments.

@@ -1,9 +1,9 @@
 module fdisk;
 
-import mstd.stdio;
-import mstd.file : readText, exists, dirEntries, SpanMode;
-import mstd.string : split, strip;
-import mstd.conv : to;
+import std.stdio;
+import std.file : readText, exists, dirEntries, SpanMode;
+import std.string : split, strip;
+import std.conv : to;
 
 void printUsage()
 {

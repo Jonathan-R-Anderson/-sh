@@ -1,7 +1,7 @@
 module login;
 
-import mstd.stdio;
-import mstd.process : environment;
+import std.stdio;
+import std.process : environment;
 
 /// Very simple login command that sets the LOGNAME and USER environment.
 void loginCommand(string[] tokens)

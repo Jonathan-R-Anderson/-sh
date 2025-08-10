@@ -4,7 +4,7 @@ extern(C):
 import core.stdc.stdio : FILE, fopen, fread, fwrite, fclose, ftell, fseek, feof, SEEK_SET;
 import core.stdc.stdlib : malloc, free;
 import core.stdc.string : strlen, strcmp, memcmp;
-import mstd.string : toStringz;
+import std.string : toStringz;
 
 // Entry structure for extracted files
 struct Entry {

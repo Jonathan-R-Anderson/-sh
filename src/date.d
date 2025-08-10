@@ -1,9 +1,9 @@
 module date;
 
-import mstd.stdio;
-import mstd.datetime : Clock, SysTime;
-import mstd.conv : to;
-import mstd.string : split, startsWith;
+import std.stdio;
+import std.datetime : Clock, SysTime;
+import std.conv : to;
+import std.string : split, startsWith;
 
 import core.stdc.time : tm, mktime, gmtime, localtime, strftime;
 

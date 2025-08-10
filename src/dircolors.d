@@ -1,10 +1,10 @@
 module dircolors;
 
-import mstd.stdio;
-import mstd.file : readText;
+import std.stdio;
+import std.file : readText;
 // Use `startsWith` for option parsing in addition to basic string helpers.
-import mstd.string : splitLines, strip, join, startsWith;
-import mstd.algorithm : filter, map;
+import std.string : splitLines, strip, join, startsWith;
+import std.algorithm : filter, map;
 
 immutable string defaultDB = `
 # Default color database

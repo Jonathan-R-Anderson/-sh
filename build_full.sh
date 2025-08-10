@@ -7,7 +7,6 @@ DC="${DC:-dmd}"
 # Flags for full runtime build
 COMMON_FLAGS=(
   -O -inline -release
-  -Isrc -Imstd         # keep if you still reference mstd during transition
 )
 
 # Collect sources

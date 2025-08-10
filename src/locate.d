@@ -1,8 +1,8 @@
 module locate;
 
-import mstd.stdio;
-import mstd.file : dirEntries, SpanMode;
-import mstd.string : indexOf;
+import std.stdio;
+import std.file : dirEntries, SpanMode;
+import std.string : indexOf;
 
 void search(string path, string pattern)
 {

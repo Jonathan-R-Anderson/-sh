@@ -1,8 +1,8 @@
 module diff3;
 
-import mstd.stdio;
-import mstd.file : readText;
-import mstd.string : splitLines;
+import std.stdio;
+import std.file : readText;
+import std.string : splitLines;
 
 string[] readLines(string name)
 {

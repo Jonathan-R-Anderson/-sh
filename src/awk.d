@@ -1,11 +1,11 @@
 module awk;
 
-import mstd.stdio;
-import mstd.file : readText;
-import mstd.regex : regex, matchFirst;
-import mstd.string : split, splitLines, stripRight;
-import mstd.algorithm : canFind;
-import mstd.conv : to;
+import std.stdio;
+import std.file : readText;
+import std.regex : regex, matchFirst;
+import std.string : split, splitLines, stripRight;
+import std.algorithm : canFind;
+import std.conv : to;
 
 /// Minimal awk implementation supporting simple print statements.
 void awkCommand(string[] tokens)
