@@ -1,6 +1,7 @@
 module cal;
 
 import mstd.stdio;
+import mstd.conv : to;
 
 bool isLeapYear(int year) {
     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
@@ -43,7 +44,11 @@ void printMonth(int month, int year, bool mondayFirst=false) {
     int w = 0;
     foreach(i; 0 .. start) { write("   "); w++; }
     foreach(d; 1 .. days + 1) {
-        writef("%2d ", d);
+        // ``writef`` only accepts string arguments, so convert the day number
+        // explicitly before printing.  This mirrors the behaviour of the
+        // original implementation that relied on Phobos' more flexible
+        // formatting routines.
+        writef("%2s ", to!string(d));
         w++;
         if(w % 7 == 0)
             writeln();

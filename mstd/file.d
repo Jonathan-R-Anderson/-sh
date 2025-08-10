@@ -2,10 +2,11 @@ module mstd.file;
 
 // Import POSIX filesystem helpers.  Alias `getcwd` to avoid colliding with the
 // wrapper function defined below.
-public import core.sys.posix.unistd : chdir, posix_getcwd = getcwd, symlink, readlink, unlink;
+public import core.sys.posix.unistd : chdir, posix_getcwd = getcwd, readlink, unlink;
+import core.sys.posix.unistd : symlink as posix_symlink;
 import core.sys.posix.dirent : DIR, dirent, opendir, readdir, closedir;
 import core.sys.posix.fcntl : open, O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, O_APPEND;
-import core.sys.posix.sys.stat : stat, lstat, S_IFDIR, S_IFREG, posix_mkdir = mkdir;
+import core.sys.posix.sys.stat : stat, lstat, S_IFDIR, S_IFREG, S_IFLNK, posix_mkdir = mkdir;
 // `rmdir` lives in `unistd`, so pull it from there under a POSIX-prefixed
 // name to mirror `posix_mkdir` above.
 import core.sys.posix.unistd : posix_rmdir = rmdir;
@@ -15,7 +16,7 @@ import core.stdc.string : strlen;
 import mstd.string : toStringz;
 import std.conv : octal;
 
-struct DirEntry { string name; }
+struct DirEntry { string name; bool isSymlink; }
 
 enum SpanMode { shallow, depth }
 
@@ -30,7 +31,14 @@ DirEntry[] dirEntries(string path, SpanMode mode = SpanMode.shallow)
     {
         auto name = entry.d_name[0 .. strlen(entry.d_name.ptr)].idup;
         if(name == "." || name == "..") continue;
-        result ~= DirEntry(name);
+
+        bool isLink = false;
+        auto fullPath = path ~ "/" ~ name;
+        stat sb;
+        if(lstat(fullPath.toStringz(), &sb) == 0)
+            isLink = (sb.st_mode & S_IFLNK) != 0;
+
+        result ~= DirEntry(name, isLink);
     }
     return result;
 }
@@ -90,6 +98,12 @@ void append(string path, const(char)[] data)
 void remove(string path)
 {
     unlink(path.toStringz());
+}
+
+/// Create a symbolic link at ``linkpath`` pointing to ``target``.
+void symlink(string target, string linkpath)
+{
+    posix_symlink(target.toStringz(), linkpath.toStringz());
 }
 
 void copy(string src, string dst)
