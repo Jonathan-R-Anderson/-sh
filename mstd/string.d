@@ -89,10 +89,15 @@ string[] splitLines(string s)
     return split(s, "\n");
 }
 
+char toLower(const char ch)
+{
+    return cast(char)((ch >= 'A' && ch <= 'Z') ? ch + 32 : ch);
+}
+
 string toLower(string s)
 {
     string result;
     foreach(ch; s)
-        result ~= cast(char) ((ch >= 'A' && ch <= 'Z') ? ch + 32 : ch);
+        result ~= toLower(ch);
     return result;
 }

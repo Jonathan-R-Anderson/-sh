@@ -5,16 +5,22 @@ module mstd.array;
 /// Simple dynamic array collector.
 struct Appender(T)
 {
-    T[] data;
+    T data;
 
-    /// Append a value.
+    /// Append an entire slice of values.
     void put(T value)
     {
         data ~= value;
     }
 
+    /// Append a single element.
+    void put(typeof(T.init[0]) value)
+    {
+        data ~= value;
+    }
+
     /// Retrieve the built array.
-    T[] array()
+    T array()
     {
         return data;
     }

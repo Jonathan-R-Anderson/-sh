@@ -1,16 +1,25 @@
 module mstd.algorithm;
 
+import mstd.string : indexOf;
+
 // Minimal implementations of selected std.algorithm utilities used in this project.
 
 /// Returns true if `elem` is present in range `r`.
 bool canFind(Range, Elem)(Range r, Elem elem)
 {
-    foreach(item; r)
+    static if (is(Range == string) && is(Elem == string))
     {
-        if(item == elem)
-            return true;
+        return indexOf(r, elem) != -1;
     }
-    return false;
+    else
+    {
+        foreach(item; r)
+        {
+            if(item == elem)
+                return true;
+        }
+        return false;
+    }
 }
 
 /// Filter elements of a range by predicate `pred`.
