@@ -3,7 +3,8 @@ module mstd.file;
 // Import POSIX filesystem helpers.  Alias `getcwd` to avoid colliding with the
 // wrapper function defined below.
 public import core.sys.posix.unistd : chdir, posix_getcwd = getcwd, readlink, unlink;
-import core.sys.posix.unistd : symlink as posix_symlink;
+// Alias the POSIX `symlink` to avoid clashing with the wrapper defined below
+import core.sys.posix.unistd : posix_symlink = symlink;
 import core.sys.posix.dirent : DIR, dirent, opendir, readdir, closedir;
 import core.sys.posix.fcntl : open, O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, O_APPEND;
 import core.sys.posix.sys.stat : stat, lstat, S_IFDIR, S_IFREG, S_IFLNK, posix_mkdir = mkdir;
