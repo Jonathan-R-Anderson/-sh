@@ -26,8 +26,14 @@ Regex regex(string pattern, string flags = "")
 
 struct Captures
 {
-    string hit;  /// matched substring
-    string pre;  /// prefix before the match
+    string hit;       /// matched substring
+    string pre;       /// prefix before the match
+    string[] captures;
+
+    bool empty()
+    {
+        return hit.length == 0 && pre.length == 0 && captures.length == 0;
+    }
 }
 
 /// Return the first match of ``r`` in ``input`` or ``Captures()`` if
@@ -38,8 +44,8 @@ Captures match(string input, Regex r)
     auto idx = indexOf(haystack, r.pattern);
     if(idx == -1)
         return Captures();
-    return Captures(input[idx .. idx + r.pattern.length],
-                    input[0 .. idx]);
+    auto hit = input[idx .. idx + r.pattern.length];
+    return Captures(hit, input[0 .. idx], [hit]);
 }
 
 /// Alias for ``match`` for compatibility with Phobos.
