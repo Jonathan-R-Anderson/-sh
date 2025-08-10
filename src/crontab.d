@@ -2,7 +2,7 @@ module crontab;
 
 import std.stdio;
 import std.file : readText, write, exists, remove;
-import std.process : environment, get;
+import std.process : environment;
 import core.stdc.stdlib : system;
 import std.string : startsWith, toStringz;
 
