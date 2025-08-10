@@ -2,7 +2,7 @@ module fdisk;
 
 import std.stdio;
 import std.file : readText, exists, dirEntries, SpanMode;
-import std.string : split, strip;
+import std.string : split, strip, startsWith;
 import std.conv : to;
 
 void printUsage()
@@ -26,7 +26,7 @@ void listDevice(string dev)
     long diskMB = (diskSectors * sectorSize) / 1024 / 1024;
     writeln("Disk " ~ dev ~ ": " ~ to!string(diskMB) ~ " MB");
     foreach(entry; dirEntries(sys, SpanMode.shallow)) {
-        auto name = entry.name.split("/").back;
+        auto name = entry.name.split("/")[$-1];
         if(!name.startsWith(base) || name == base) continue;
         auto sizePath = entry.name ~ "/size";
         if(!exists(sizePath)) continue;

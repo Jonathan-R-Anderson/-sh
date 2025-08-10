@@ -2,8 +2,8 @@ module diff;
 
 import std.stdio;
 import std.file : readText;
-import std.string : splitLines, toLower, strip, join, split;
-import std.algorithm : max;
+import std.string : splitLines, toLower, strip, join, split, startsWith;
+import std.algorithm : max, map;
 import std.array : array;
 
 struct DiffOp {
@@ -31,7 +31,7 @@ string normalize(string line, bool ignoreCase, bool ignoreSpace, bool ignoreBlan
 {
     auto l = line;
     if(ignoreSpace)
-        l = l.split.whitespace.join(" ").strip;
+        l = l.split().join(" ").strip;
     if(ignoreBlank && l.length == 0)
         l = "";
     if(ignoreCase)
@@ -117,7 +117,7 @@ void diffFiles(string f1, string f2,
     }
 
     foreach(op; ops) {
-        final switch(op.tag) {
+        switch(op.tag) {
             case ' ': if(unified) writeln(" " ~ op.line); break;
             case '+': writeln(unified?"+" ~ op.line:"> " ~ op.line); break;
             case '-': writeln(unified?"-" ~ op.line:"< " ~ op.line); break;

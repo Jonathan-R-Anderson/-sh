@@ -45,7 +45,7 @@ void ddCommand(string[] tokens)
         if(idx < 0) continue;
         auto key = t[0 .. idx];
         auto val = t[idx+1 .. $];
-        final switch(key) {
+        switch(key) {
             case "if": infile = val; break;
             case "of": outfile = val; break;
             case "bs":
@@ -96,10 +96,10 @@ void ddCommand(string[] tokens)
     }
 
     if(skip > 0) {
-        fin.seek(cast(long)(skip * bs), SeekPos.Set);
+        fin.seek(cast(long)(skip * bs));
     }
     if(seek > 0) {
-        fout.seek(cast(long)(seek * bs), SeekPos.Set);
+        fout.seek(cast(long)(seek * bs));
     }
 
     size_t blocks = 0;

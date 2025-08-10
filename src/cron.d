@@ -6,7 +6,7 @@ import std.datetime : Clock, SysTime;
 import core.stdc.stdlib : system;
 import std.conv : to;
 import std.algorithm : splitter;
-import std.string : split, indexOf, strip, startsWith, join, splitLines;
+import std.string : split, indexOf, strip, startsWith, join, splitLines, toStringz;
 import core.thread : Thread;
 import core.time : dur;
 
@@ -88,7 +88,6 @@ void runCron(string path) {
                    job.dom[now.day] &&
                    job.months[now.month] &&
                    job.dow[now.dayOfWeek]) {
-                   import core.stdc.string : toStringz;
                    system(job.cmd.toStringz);
                 }
             }

@@ -127,7 +127,7 @@ void cutCommand(string[] tokens) {
         idx++;
     }
 
-    if(outDelim.length == 0) outDelim = cast(string)delim;
+    if(outDelim.length == 0) outDelim = to!string(delim);
     if(useChars && !useBytes && charSpec.length) byteSpec = charSpec, useBytes=true;
     if(useFields && fieldSpec.length == 0) return; // nothing to select
     Range[] ranges;

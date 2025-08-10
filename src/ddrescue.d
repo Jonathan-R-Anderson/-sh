@@ -3,7 +3,7 @@ module ddrescue;
 import std.stdio;
 import std.file : exists, readText, append, write;
 import std.conv : to;
-import std.string : split;
+import std.string : split, startsWith;
 
 size_t parseSize(string s)
 {
@@ -80,8 +80,8 @@ void ddrescueCommand(string[] tokens)
             fout = File(outfile, "w+b");
     } catch(Exception) { writeln("ddrescue: cannot write " ~ outfile); fin.close(); return; }
 
-    fin.seek(cast(long)ipos, SeekPos.Set);
-    fout.seek(cast(long)opos, SeekPos.Set);
+    fin.seek(cast(long)ipos);
+    fout.seek(cast(long)opos);
 
     ubyte[] buf;
     buf.length = block;
@@ -93,10 +93,12 @@ void ddrescueCommand(string[] tokens)
         size_t toRead = block;
         if(copied + toRead > maxSize) toRead = maxSize - copied;
         size_t n = 0;
+        ubyte[] readData;
         bool readOk = false;
         foreach(i; 0 .. maxRetries + 1) {
             try {
-                n = fin.rawRead(buf[0 .. toRead]);
+                readData = fin.rawRead(buf[0 .. toRead]);
+                n = readData.length;
                 readOk = true;
                 break;
             } catch(Exception e) {
@@ -111,13 +113,13 @@ void ddrescueCommand(string[] tokens)
             if(errors > maxErrors) break;
             ipos += block;
             opos += block;
-            fin.seek(cast(long)ipos, SeekPos.Set);
-            fout.seek(cast(long)opos, SeekPos.Set);
+            fin.seek(cast(long)ipos);
+            fout.seek(cast(long)opos);
             copied += block;
             continue;
         }
         if(n == 0) break;
-        fout.rawWrite(buf[0 .. n]);
+        fout.rawWrite(readData[0 .. n]);
         logEntry(logFile, "ok " ~ to!string(ipos) ~ " " ~ to!string(n));
         ipos += n;
         opos += n;
