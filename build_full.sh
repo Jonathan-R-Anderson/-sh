@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-# Determine target system from the first argument or SYSTEM env var
-system=${1:-${SYSTEM:-custom}}
+# Compiler (override with: DC=ldc2 ./build_full.sh)
+DC="${DC:-dmd}"
 
-# Compile all modules using the full D compiler.
-modules=$(ls src/*.d | tr '\n' ' ')
+# Flags for full runtime build
+COMMON_FLAGS=(
+  -O -inline -release
+  -Isrc -Imstd         # keep if you still reference mstd during transition
+)
 
-echo "Compiling modules:" $modules
+# Collect sources
+mapfile -t SOURCES < <(ls src/*.d)
 
-# Use the Linux system compiler when targeting a Linux host
-if [[ "$system" == "linux" ]]; then
-    dmd_cmd=${DC:-dmd}
-else
-    dmd_cmd=${DC:-anonymos-dmd}
-fi
-
-"$dmd_cmd" -I=. -Isrc $modules -of=interpreter
+echo "Building with ${DC}"
+"${DC}" "${COMMON_FLAGS[@]}" "${SOURCES[@]}" -of=interpreter
+echo "OK -> ./interpreter"
