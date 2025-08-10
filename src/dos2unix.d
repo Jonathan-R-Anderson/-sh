@@ -2,7 +2,8 @@ module dos2unix;
 
 import mstd.stdio;
 import mstd.file : readText, write;
-import mstd.string : replace;
+// `replace` for line ending conversion and `startsWith` for option parsing.
+import mstd.string : replace, startsWith;
 
 void convertFile(string inFile, string outFile, bool keepDate, bool quiet)
 {

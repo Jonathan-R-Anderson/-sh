@@ -2,7 +2,10 @@ module df;
 
 import mstd.stdio;
 import mstd.file : readText;
-import mstd.string : split, toStringz;
+// Additional string utilities used throughout this module
+// `splitLines` is needed to iterate over /proc/mounts and `startsWith`
+// is used for option parsing below.
+import mstd.string : split, toStringz, splitLines, startsWith;
 import mstd.algorithm : canFind;
 import mstd.format : format;
 import mstd.conv : to;

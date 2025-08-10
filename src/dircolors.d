@@ -2,7 +2,8 @@ module dircolors;
 
 import mstd.stdio;
 import mstd.file : readText;
-import mstd.string : splitLines, strip, join;
+// Use `startsWith` for option parsing in addition to basic string helpers.
+import mstd.string : splitLines, strip, join, startsWith;
 import mstd.algorithm : filter, map;
 
 immutable string defaultDB = `
