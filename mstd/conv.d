@@ -2,6 +2,7 @@ module mstd.conv;
 
 import core.stdc.stdlib : atoi, strtol, strtoll, strtod;
 import core.stdc.stdio : sprintf;
+import std.bigint : BigInt;
 
 class ConvException : Exception
 {
@@ -30,27 +31,36 @@ T to(T, S)(S value)
             return strtod(value.ptr, null);
         else static if (is(T == string))
             return value;
+        else static if (is(T == BigInt))
+            return BigInt(value);
         else
             static assert(false, "Unsupported conversion");
     }
-    // Conversions to strings from integral types
+    // Conversions to strings
     else static if (is(T == string))
     {
-        char[64] buf;
-        size_t len;
-        static if (is(S == long) || is(S == int) || is(S == short) || is(S == byte))
+        static if (is(S == BigInt))
         {
-            len = sprintf(buf.ptr, "%lld", cast(long)value);
-        }
-        else static if (is(S == ulong) || is(S == uint) || is(S == ushort) || is(S == ubyte) || is(S == char) || is(S == wchar) || is(S == dchar))
-        {
-            len = sprintf(buf.ptr, "%llu", cast(ulong)value);
+            return value.toString();
         }
         else
         {
-            static assert(false, "Unsupported conversion");
+            char[64] buf;
+            size_t len;
+            static if (is(S == long) || is(S == int) || is(S == short) || is(S == byte))
+            {
+                len = sprintf(buf.ptr, "%lld", cast(long)value);
+            }
+            else static if (is(S == ulong) || is(S == uint) || is(S == ushort) || is(S == ubyte) || is(S == char) || is(S == wchar) || is(S == dchar))
+            {
+                len = sprintf(buf.ptr, "%llu", cast(ulong)value);
+            }
+            else
+            {
+                static assert(false, "Unsupported conversion");
+            }
+            return buf[0 .. len].idup;
         }
-        return buf[0 .. len].idup;
     }
     else
     {
