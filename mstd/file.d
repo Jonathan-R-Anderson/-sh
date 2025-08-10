@@ -119,7 +119,11 @@ string readLink(string path)
 /// Create a directory at ``path`` with the given ``mode`` (defaults to
 /// ``0777`` like the POSIX ``mkdir``).  This is a small wrapper around the
 /// POSIX call to keep the public API simple.
-void mkdir(string path, int mode = 0o777)
+///
+/// D's compiler version in this project does not support the ``0o`` prefix
+/// for octal literals, so we use the traditional leading ``0`` notation
+/// instead.
+void mkdir(string path, int mode = 0777)
 {
     posix_mkdir(path.toStringz(), mode);
 }
