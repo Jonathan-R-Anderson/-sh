@@ -275,6 +275,7 @@ string[][string] moduleFunctions;
 string[][string] recordDefs;
 size_t pidCounter;
 string[] historyLines;
+string currentModule;
 
 class Process {
     Mutex m;
@@ -401,6 +402,16 @@ Expr parseString(string code) {
     return parser.parseExpr();
 }
 
+Expr[] parseAll(string code) {
+    auto toks = lexInput(code);
+    auto parser = new LfeParser(toks);
+    Expr[] exprs;
+    while (parser.pos < parser.tokens.length) {
+        exprs ~= parser.parseExpr();
+    }
+    return exprs;
+}
+
 Value evalString(string code) {
     auto ast = parseString(code);
     return evalExpr(ast);
@@ -408,14 +419,19 @@ Value evalString(string code) {
 
 void loadFile(string path) {
     auto text = readText(path);
-    auto ast = parseString(text);
-    evalExpr(ast);
-    if(ast.isList && ast.list.length > 0 && ast.list[0].atom == "defmodule") {
-        auto modName = ast.list[1].atom;
-        writeln("#(module ", modName, ")");
-    } else {
-        writeln("ok");
+    auto exprs = parseAll(text);
+    auto prev = currentModule;
+    string modName;
+    foreach(ast; exprs) {
+        evalExpr(ast);
+        if(ast.isList && ast.list.length > 0 && ast.list[0].atom == "defmodule")
+            modName = ast.list[1].atom;
     }
+    currentModule = prev;
+    if(modName.length)
+        writeln("#(module ", modName, ")");
+    else
+        writeln("ok");
 }
 
 void showCompletions(string prefix) {
@@ -1279,13 +1295,16 @@ Value evalList(Expr e) {
             clauses ~= FunctionClause(params, body, guard, hasGuard);
         }
         auto arity = clauses[0].params.length;
-        functions[name ~ "/" ~ to!string(arity)] = clauses;
         string entry = name ~ "/" ~ to!string(arity);
-    if(!("global" in moduleFunctions)) moduleFunctions["global"] = [];
-    if(!moduleFunctions["global"].canFind(entry)) moduleFunctions["global"] ~= entry;
+        string mod = currentModule.length ? currentModule : "global";
+        string key = mod == "global" ? entry : mod ~ ":" ~ entry;
+        functions[key] = clauses;
+        if(!(mod in moduleFunctions)) moduleFunctions[mod] = [];
+        if(!moduleFunctions[mod].canFind(entry)) moduleFunctions[mod] ~= entry;
         return num(0);
     } else if(head == "defmodule") {
         auto modName = e.list[1].atom;
+        currentModule = modName;
         foreach(expr; e.list[2 .. $]) {
             if(expr.isList && expr.list.length > 0 && expr.list[0].atom == "defun") {
                 auto fname = expr.list[1].atom;
@@ -1494,9 +1513,24 @@ Value evalList(Expr e) {
         auto res = handleRecordCall(head, e, recHandled);
         if(recHandled) return res;
         auto key = head ~ "/" ~ to!string(e.list.length - 1);
-        if(auto fn = key in functions) {
+        FunctionClause[]* fn;
+        string fnModule;
+        if(auto fptr = key in functions) {
+            fn = fptr;
+            auto colon = head.indexOf(":");
+            if(colon != -1) fnModule = head[0 .. colon];
+        } else if(currentModule.length) {
+            auto modKey = currentModule ~ ":" ~ key;
+            if(auto fptr2 = modKey in functions) {
+                fn = fptr2;
+                fnModule = currentModule;
+            }
+        }
+        if(fn !is null) {
             auto clauses = *fn;
             auto args = e.list[1 .. $];
+            auto prevMod = currentModule;
+            if(fnModule.length) currentModule = fnModule;
             foreach(clause; clauses) {
                 if(clause.params.length != args.length) continue;
                 bool match = true;
@@ -1524,12 +1558,14 @@ Value evalList(Expr e) {
                     auto result = evalExpr(clause.body);
                     foreach(k,v; saved) variables[k] = v;
                     foreach(n; varNames) if(!(n in saved)) variables.remove(n);
+                    currentModule = prevMod;
                     return result;
                 } else {
                     foreach(k,v; saved) variables[k] = v;
                     foreach(n; varNames) if(!(n in saved)) variables.remove(n);
                 }
             }
+            currentModule = prevMod;
             return num(0);
         }
         return num(0);
