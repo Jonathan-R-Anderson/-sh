@@ -92,7 +92,7 @@ void fdiskCommand(string[] tokens)
     if(optList) {
         if(args.length == 0) {
             foreach(entry; dirEntries("/sys/block", SpanMode.shallow))
-                args ~= "/dev/" ~ entry.name.split("/").back;
+                args ~= "/dev/" ~ entry.name.split("/")[$-1];
         }
         foreach(dev; args)
             listDevice(dev);

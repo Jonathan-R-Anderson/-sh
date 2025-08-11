@@ -1,7 +1,7 @@
 module getopts;
 
 import std.stdio;
-import std.string : strip;
+import std.string : strip, indexOf;
 import std.conv : to;
 
 extern __gshared string[string] variables; // from interpreter
@@ -44,7 +44,7 @@ void getoptsCommand(string[] tokens)
     auto pos = optstring.indexOf(opt);
     if(pos == -1) {
         variables[name] = "?";
-        variables["OPTARG"] = opt;
+        variables["OPTARG"] = to!string(opt);
         optind++;
         variables["OPTIND"] = to!string(optind);
         return;

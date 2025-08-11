@@ -4,6 +4,7 @@ import std.stdio;
 import std.file : readText;
 import std.string : splitLines, lastIndexOf, stripRight;
 import std.conv : to;
+import std.algorithm : startsWith;
 
 void foldLine(string line, size_t width, bool breakSpaces)
 {

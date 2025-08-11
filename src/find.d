@@ -3,7 +3,7 @@ module find;
 import std.stdio;
 import std.file : dirEntries, SpanMode, isFile, isDir;
 import std.path : baseName, buildPath;
-import std.algorithm : canFind;
+import std.algorithm : startsWith;
 import std.path : globMatch;
 import std.conv : to;
 

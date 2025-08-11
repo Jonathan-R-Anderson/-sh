@@ -2,8 +2,8 @@ module fgrep;
 
 import std.stdio;
 import std.file : readText;
-import std.algorithm.searching : canFind;
-import std.string : toLower;
+import std.algorithm : canFind, startsWith;
+import std.string : toLower, splitLines;
 import std.conv : to;
 
 void fgrepCommand(string[] tokens)
