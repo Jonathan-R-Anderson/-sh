@@ -32,7 +32,7 @@ class Lexer {
             bool matched = false;
             foreach (rule; rules) {
                 auto m = match(input[pos .. $], rule.pattern);
-                if (m.hit && m.hit.length > 0 && m.pre.length == 0) {
+                if (!m.empty && m.hit.length > 0 && m.pre.length == 0) {
                     tokens ~= Token(rule.name, m.hit);
                     pos += m.hit.length;
                     matched = true;
