@@ -682,7 +682,8 @@ Value handleRecordCall(string head, Expr e, ref bool handled) {
 }
 
 Value callFunctionDirect(string name, Value[] argVals) {
-    if(auto fn = name in functions) {
+    auto key = name ~ "/" ~ to!string(argVals.length);
+    if(auto fn = key in functions) {
         auto clauses = *fn;
         foreach(clause; clauses) {
             if(clause.params.length != argVals.length) continue;
@@ -1277,8 +1278,9 @@ Value evalList(Expr e) {
             auto body = e.list[3];
             clauses ~= FunctionClause(params, body, guard, hasGuard);
         }
-        functions[name] = clauses;
-        string entry = name ~ "/" ~ to!string(clauses[0].params.length);
+        auto arity = clauses[0].params.length;
+        functions[name ~ "/" ~ to!string(arity)] = clauses;
+        string entry = name ~ "/" ~ to!string(arity);
     if(!("global" in moduleFunctions)) moduleFunctions["global"] = [];
     if(!moduleFunctions["global"].canFind(entry)) moduleFunctions["global"] ~= entry;
         return num(0);
@@ -1310,8 +1312,9 @@ Value evalList(Expr e) {
                     auto body = expr.list[3];
                     clauses ~= FunctionClause(params, body, guard, hasGuard);
                 }
-                functions[modName ~ ":" ~ fname] = clauses;
-                string entry = fname ~ "/" ~ to!string(clauses[0].params.length);
+                auto arity = clauses[0].params.length;
+                functions[modName ~ ":" ~ fname ~ "/" ~ to!string(arity)] = clauses;
+                string entry = fname ~ "/" ~ to!string(arity);
                 if(!(modName in moduleFunctions)) moduleFunctions[modName] = [];
                 if(!moduleFunctions[modName].canFind(entry)) moduleFunctions[modName] ~= entry;
             } else if(expr.isList && expr.list.length > 0 && expr.list[0].atom == "defmacro") {
@@ -1490,7 +1493,8 @@ Value evalList(Expr e) {
         bool recHandled = false;
         auto res = handleRecordCall(head, e, recHandled);
         if(recHandled) return res;
-        if(auto fn = head in functions) {
+        auto key = head ~ "/" ~ to!string(e.list.length - 1);
+        if(auto fn = key in functions) {
             auto clauses = *fn;
             auto args = e.list[1 .. $];
             foreach(clause; clauses) {
