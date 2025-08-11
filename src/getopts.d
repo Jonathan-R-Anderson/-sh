@@ -3,8 +3,7 @@ module getopts;
 import std.stdio;
 import std.string : strip, indexOf;
 import std.conv : to;
-
-extern __gshared string[string] variables; // from interpreter
+import interpreter : variables;
 
 /// Simplified getopts implementation.
 void getoptsCommand(string[] tokens)

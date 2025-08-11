@@ -5,6 +5,8 @@ import dparser;
 import std.regex : regex;
 import std.stdio;
 import std.string;
+import std.algorithm : map, filter;
+import std.array : join, array;
 
 struct Expr {
     bool isList;

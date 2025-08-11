@@ -1,11 +1,10 @@
 module local;
 
 import std.stdio;
+import std.string : indexOf;
+import interpreter : variables;
 
 /// Minimal local implementation - assigns variables in the global map.
-extern (C) {
-    __gshared string[string] variables;
-}
 
 void localCommand(string[] tokens)
 {

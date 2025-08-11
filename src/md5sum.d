@@ -3,6 +3,7 @@ module md5sum;
 import std.stdio;
 import std.file : read;
 import std.digest.md;
+import std.format : format;
 
 string hexDigest(const(ubyte)[] data)
 {

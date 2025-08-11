@@ -1,6 +1,7 @@
 module linkcmd;
 
 import std.stdio;
+import std.string : toStringz;
 import core.sys.posix.unistd : link;
 
 /// Create a hard link.
@@ -13,7 +14,7 @@ void linkCommand(string[] tokens)
     auto src = tokens[1];
     auto dest = tokens[2];
     try {
-        link(src, dest);
+        link(toStringz(src), toStringz(dest));
     } catch(Exception) {
         writeln("link: cannot link ", src, " to ", dest);
     }

@@ -6,10 +6,10 @@ import std.regex : regex;
 import std.stdio;
 import std.string;
 import std.ascii : isDigit;
-import std.algorithm;
+import std.algorithm : canFind, filter, sort, countUntil;
 import std.array;
 import std.conv : to;
-import std.utf;
+import std.utf : encode;
 import std.file : readText, copy;
 import core.thread : Thread;
 import cpio : createArchive, extractArchive;
@@ -17,6 +17,7 @@ import core.sync.mutex : Mutex;
 import core.sync.condition : Condition;
 import syswrap : system;
 version(Posix) import core.sys.posix.unistd : execvp;
+version(Posix) extern(C) int sethostname(const char* name, size_t len);
 import objectsystem;
 import local;
 import locate;
@@ -167,7 +168,9 @@ string unescape(string s) {
                         hx ~= s[j]; j++; }
                     if(hx.length) {
                         dchar val = cast(dchar)to!int("0x" ~ hx);
-                        result ~= std.utf.toUTF8(val);
+                        char[4] tmp;
+                        auto len = encode(tmp, val);
+                        result ~= tmp[0 .. len];
                         i = j - 1;
                     } else result ~= n;
                     break; }
@@ -298,7 +301,7 @@ void sendExitSignal(string fromPid, string toPid, Value reason) {
     }
     synchronized(proc.m) {
         proc.inbox ~= tupleVal([atomVal("EXIT"), atomVal(fromPid), reason]);
-        proc.c.notifyOne();
+        proc.c.notify();
     }
     if(!proc.trapExit) proc.alive = false;
 }
@@ -368,7 +371,7 @@ Value quoteValue(Expr e);
 Expr valueToExpr(Value v);
 Expr macroExpand(Expr e);
 
-immutable Rule[] rules = [
+Rule[] rules = [
     Rule("HASHMAP", regex("#M\\(")),
     Rule("HASHLPAREN", regex("#\\(")),
     Rule("LPAREN", regex("\\(")),
@@ -415,7 +418,7 @@ void showCompletions(string prefix) {
         string[] mods;
         foreach(m; builtinModules) if(m.startsWith(prefix)) mods ~= m;
         foreach(m; moduleFunctions.keys) if(m.startsWith(prefix)) mods ~= m;
-        mods.sort;
+        sort(mods);
         foreach(m; mods) write(m ~ "    ");
         writeln();
     } else {
@@ -427,7 +430,7 @@ void showCompletions(string prefix) {
             foreach(f; *arr) if(f.startsWith(funPref)) funcs ~= f;
         if(auto arr2 = mod in moduleFunctions)
             foreach(f; *arr2) if(f.startsWith(funPref)) funcs ~= f;
-        funcs.sort;
+        sort(funcs);
         foreach(f; funcs) write(f ~ "    ");
         writeln();
     }
@@ -923,7 +926,9 @@ Value evalList(Expr e) {
         return mapVal(m);
     } else if(head == "map-update") {
         auto base = evalExpr(e.list[1]);
-        Value[string] m = base.kind == ValueKind.Map ? base.map.dup : Value[string].init;
+        Value[string] m;
+        if(base.kind == ValueKind.Map)
+            foreach(k, v; base.map) m[k] = v;
         for(size_t i = 2; i + 1 < e.list.length; i += 2) {
             auto k = evalExpr(e.list[i]);
             auto v = evalExpr(e.list[i+1]);
@@ -941,7 +946,7 @@ Value evalList(Expr e) {
         }
         synchronized(proc.m) {
             proc.inbox ~= msgVal;
-            proc.c.notifyOne();
+            proc.c.notify();
         }
         return msgVal;
     } else if(head == "receive") {
@@ -1155,7 +1160,7 @@ Value evalList(Expr e) {
         string arch = valueToString(archVal);
         if(arch.length >= 2 && arch[0] == '"' && arch[$-1] == '"')
             arch = arch[1 .. $-1];
-        extractArchive(arch);
+        extractArchive(toStringz(arch));
         return atomVal("ok");
     } else if(head == "head") {
         if(e.list.length < 2) return atomVal("error");
@@ -1185,7 +1190,7 @@ Value evalList(Expr e) {
         return atomVal("ok");
     } else if(head == "hostname") {
         version(Posix) {
-            import core.sys.posix.unistd : gethostname, sethostname;
+            import core.sys.posix.unistd : gethostname;
             char[256] buf;
             if(e.list.length == 1) {
                 auto len = gethostname(buf.ptr, buf.length);
@@ -1269,8 +1274,8 @@ Value evalList(Expr e) {
         }
         functions[name] = clauses;
         string entry = name ~ "/" ~ to!string(clauses[0].params.length);
-        if(!("global" in moduleFunctions)) moduleFunctions["global"] = [];
-        if(entry !in moduleFunctions["global"]) moduleFunctions["global"] ~= entry;
+    if(!("global" in moduleFunctions)) moduleFunctions["global"] = [];
+    if(!moduleFunctions["global"].canFind(entry)) moduleFunctions["global"] ~= entry;
         return num(0);
     } else if(head == "defmodule") {
         auto modName = e.list[1].atom;
@@ -1303,7 +1308,7 @@ Value evalList(Expr e) {
                 functions[modName ~ ":" ~ fname] = clauses;
                 string entry = fname ~ "/" ~ to!string(clauses[0].params.length);
                 if(!(modName in moduleFunctions)) moduleFunctions[modName] = [];
-                if(entry !in moduleFunctions[modName]) moduleFunctions[modName] ~= entry;
+                if(!moduleFunctions[modName].canFind(entry)) moduleFunctions[modName] ~= entry;
             } else if(expr.isList && expr.list.length > 0 && expr.list[0].atom == "defmacro") {
                 auto mname = expr.list[1].atom;
                 string[] params;

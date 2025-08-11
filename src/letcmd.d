@@ -1,11 +1,10 @@
 module letcmd;
 
 import std.stdio;
-import std.string : split, replace;
+import std.string : split, replace, indexOf;
 import std.conv : to;
 import bc : bcEval;
-
-extern __gshared string[string] variables;
+import interpreter : variables;
 
 /// Evaluate arithmetic expressions and assign to variables.
 void letCommand(string[] tokens)
