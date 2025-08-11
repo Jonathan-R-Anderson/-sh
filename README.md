@@ -6,10 +6,14 @@ The implementation is intentionally small and demonstrates how one might begin t
 
 ## Building
 
-A D compiler such as `dmd` or `ldc2` is required. To cross compile for a specific target, supply the desired architecture flags to the compiler. For example:
+A D compiler such as `dmd` or `ldc2` is required. The shell now uses the
+GNU Readline library for interactive input. Install the appropriate
+development package (e.g. `libreadline-dev` on Debian-based systems) and
+link against it when building. To cross compile for a specific target,
+ supply the desired architecture flags to the compiler. For example:
 
 ```bash
-ldc2 -mtriple=<target> src/*.d -of=interpreter
+ldc2 -mtriple=<target> src/*.d -L-lreadline -of=interpreter
 ```
 
 Replace `<target>` with the appropriate triple for the operating system described in the `internetcomputer` repository.
@@ -55,9 +59,13 @@ The interpreter now supports a broader set of commands:
 - `exit` to terminate the shell with an optional status code
 
 Running the interpreter with no command argument starts an interactive shell.
-You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`). Type `exit` to leave the shell.
-The shell now records command history which can be viewed with `history`.
-Aliases may be managed with the `alias` builtin and removed using `unalias`.
+You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`).
+The shell now provides interactive line editing with GNU Readline, so
+you can navigate command history with the Up and Down arrow keys.
+Type `exit` to leave the shell. Command history can also be viewed with
+`history`. At startup, the shell executes commands from `~/.shrc` if
+present, allowing aliases, variables, and other settings to be configured
+similar to zsh. Aliases may be managed with the `alias` builtin and removed using `unalias`.
 You can repeat the previous command by typing `!!`.
 Key sequences can be associated with commands using the `bind -x` builtin.
 The `builtin` command runs one of the shell's builtins directly, bypassing alias expansion.

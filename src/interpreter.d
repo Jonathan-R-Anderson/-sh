@@ -11,11 +11,12 @@ import syswrap : system;
 version(Posix) import core.sys.posix.unistd : execvp;
 version(Posix) extern(C) int chroot(const char* path);
 import std.regex : regex, matchFirst;
-import std.path : globMatch, dirName;
+import std.path : globMatch, dirName, buildPath;
 import std.conv : to;
 import core.thread : Thread;
 import std.datetime : Clock, SysTime;
 import core.time : dur;
+import core.stdc.stdlib : free;
 import base32;
 import base64;
 import dirname;
@@ -148,6 +149,11 @@ size_t nextBgId;
 int loopDepth;
 int breakCount;
 
+bool interactive;
+
+extern(C) char* readline(const char* prompt);
+extern(C) void add_history(const char* line);
+
 /**
  * Simple interpreter skeleton for a Lisp-like language.
  * This implementation is intentionally minimal and is
@@ -233,6 +239,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
     scope(exit) callStack.popBack();
 
     history ~= cmd;
+    if(interactive) add_history(cmd.toStringz);
     auto trimmedCmd = cmd.strip;
     if(trimmedCmd.length > 0 && trimmedCmd[0] == '(') {
         try {
@@ -1896,6 +1903,20 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
     }
 }
 
+void loadRc() {
+    auto home = environment.get("HOME", "");
+    if(home.length) {
+        auto rcPath = buildPath(home, ".shrc");
+        if(exists(rcPath)) {
+            foreach(line; readText(rcPath).splitLines) {
+                auto trimmed = line.strip;
+                if(trimmed.length == 0 || trimmed[0] == '#') continue;
+                run(trimmed);
+            }
+        }
+    }
+}
+
 void repl() {
     auto ps1 = environment.get("PS1", "sh> ");
     auto colorName = environment.get("PS_COLOR", "");
@@ -1903,10 +1924,11 @@ void repl() {
     if(auto c = colorName in colorCodes) colorCode = *c;
     auto reset = colorCode.length ? "\033[0m" : "";
     for(;;) {
-        write(colorCode, ps1, reset);
-        auto line = readln();
-        if(line is null) break;
-        line = line.strip;
+        auto prompt = (colorCode ~ ps1 ~ reset).toStringz;
+        auto cLine = readline(prompt);
+        if(cLine is null) break;
+        scope(exit) free(cLine);
+        string line = std.string.strip(fromStringz(cLine)).idup;
         if(line == "exit") break;
         if(line.length == 0) continue;
         if(auto b = line in keyBindings) {
@@ -1925,6 +1947,8 @@ void main(string[] args) {
     dirStack ~= getcwd();
     foreach(name; builtinNames) builtinEnabled[name] = true;
     if(args.length < 2) {
+        interactive = true;
+        loadRc();
         repl();
         return;
     }
