@@ -2,7 +2,7 @@ module groupmod;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system groupmod command with the provided arguments.
 void groupmodCommand(string[] tokens)

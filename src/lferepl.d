@@ -11,11 +11,11 @@ import std.array;
 import std.conv : to;
 import std.utf;
 import std.file : readText, copy;
-import std.parallelism;
+import core.thread : Thread;
 import cpio : createArchive, extractArchive;
 import core.sync.mutex : Mutex;
 import core.sync.condition : Condition;
-import core.stdc.stdlib : system;
+import syswrap : system;
 version(Posix) import core.sys.posix.unistd : execvp;
 import objectsystem;
 import local;
@@ -1013,7 +1013,7 @@ Value evalList(Expr e) {
             cur.links ~= pid;
             proc.links ~= currentPid;
         }
-        taskPool.put(() {
+        auto thr = new Thread({
             currentPid = pid;
             Value reason = atomVal("normal");
             try {
@@ -1025,6 +1025,7 @@ Value evalList(Expr e) {
             }
             propagateExit(pid, reason);
         });
+        thr.start();
         return atomVal(pid);
     } else if(head == "process_flag") {
         auto flagVal = evalExpr(e.list[1]);

@@ -3,10 +3,10 @@ module cron;
 import std.stdio;
 import std.file : readText, exists;
 import std.datetime : Clock, SysTime;
-import core.stdc.stdlib : system;
+import syswrap : system;
 import std.conv : to;
 import std.algorithm : splitter;
-import std.string : split, indexOf, strip, startsWith, join, splitLines, toStringz;
+import std.string : split, indexOf, strip, startsWith, join, splitLines;
 import core.thread : Thread;
 import core.time : dur;
 
@@ -88,7 +88,7 @@ void runCron(string path) {
                    job.dom[now.day] &&
                    job.months[now.month] &&
                    job.dow[now.dayOfWeek]) {
-                   system(job.cmd.toStringz);
+                   system(job.cmd);
                 }
             }
         }

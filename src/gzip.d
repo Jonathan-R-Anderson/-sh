@@ -2,7 +2,7 @@ module gzip;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system gzip command with the provided arguments.
 void gzipCommand(string[] tokens)

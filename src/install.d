@@ -2,7 +2,7 @@ module install;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system install command with the provided arguments.
 void installCommand(string[] tokens)

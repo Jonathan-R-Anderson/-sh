@@ -2,7 +2,7 @@ module iconv;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system iconv command with the provided arguments.
 void iconvCommand(string[] tokens)

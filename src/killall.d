@@ -2,7 +2,7 @@ module killall;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system killall command with the provided arguments.
 void killallCommand(string[] tokens)
