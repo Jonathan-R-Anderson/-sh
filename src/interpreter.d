@@ -330,6 +330,9 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             case "-": result = a - b; break;
             case "*": result = a * b; break;
             case "/": result = b == 0 ? 0 : a / b; break;
+            default:
+                writeln("Unknown operator " ~ op);
+                break;
         }
         writeln(result);
     } else if(op == "bc") {
@@ -1444,10 +1447,9 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             if(bgJobs.length == 0) {
                 writeln("bg: no current job");
             } else {
-                auto ref job = bgJobs[$-1];
-                if(!job.running) {
-                    job.running = true;
-                    job.thread.start();
+                if(!bgJobs[$-1].running) {
+                    bgJobs[$-1].running = true;
+                    bgJobs[$-1].thread.start();
                 }
             }
         } else if(tokens[1].startsWith("%")) {
@@ -1750,14 +1752,15 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
                 bool local = false;
                 auto lowerLine = line.toLower;
                 auto lowerKw = kw.toLower;
-                if(useRegex) {
-                    try {
-                        auto r = regex(lowerKw, "i");
-                        local = matchFirst(lowerLine, r) !is null;
-                    } catch(Exception) {
-                        continue;
-                    }
-                } else if(useWildcard) {
+                  if(useRegex) {
+                      try {
+                          auto r = regex(lowerKw, "i");
+                          auto m = matchFirst(lowerLine, r);
+                          local = !m.empty;
+                      } catch(Exception) {
+                          continue;
+                      }
+                  } else if(useWildcard) {
                     local = globMatch(lowerLine, lowerKw);
                 } else if(useExact) {
                     foreach(word; lowerLine.split()) {

@@ -1,11 +1,13 @@
 module look;
 
 import std.stdio;
-import std.string : toLower, strip;
+import std.string : toLower, strip, startsWith, indexOf, chomp;
 import std.file : readText;
 import std.stdio : File;
 import std.algorithm : filter;
+import std.array : array;
 import std.ascii : isAlphaNum;
+import std.conv : to;
 
 void lookCommand(string[] tokens)
 {
@@ -15,7 +17,7 @@ void lookCommand(string[] tokens)
     bool useTerm = false;
 
     size_t idx = 1;
-    while(idx < tokens.length && tokens[idx].startsWith("-")) {
+      while(idx < tokens.length && tokens[idx].startsWith("-")) {
         auto t = tokens[idx];
         if(t == "-d") dict = true;
         else if(t == "-f") ignoreCase = true;
@@ -33,11 +35,11 @@ void lookCommand(string[] tokens)
     string prefix = tokens[idx++];
     string file = idx < tokens.length ? tokens[idx] : "/usr/share/dict/words";
 
-    File f;
-    try { f = File(file, "r"); } catch(Exception) { writeln("look: cannot read ", file); return; }
+      File f;
+      try { f = File(file, "r"); } catch(Exception) { writeln("look: cannot read ", file); return; }
 
-    foreach(line; f.byLine()) {
-        auto l = line.chomp;
+      foreach(line; f.byLine()) {
+          auto l = line.chomp.idup;
         string cmpLine = l;
         string cmpPref = prefix;
         if(useTerm) {
@@ -46,16 +48,16 @@ void lookCommand(string[] tokens)
             p = cmpPref.indexOf(term);
             if(p >= 0) cmpPref = cmpPref[0 .. p+1];
         }
-        if(dict) {
-            cmpLine = cmpLine.filter!(c => isAlphaNum(c)).idup;
-            cmpPref = cmpPref.filter!(c => isAlphaNum(c)).idup;
-        }
-        if(ignoreCase) {
-            cmpLine = toLower(cmpLine);
-            cmpPref = toLower(cmpPref);
-        }
-        if(cmpLine.startsWith(cmpPref))
-            writeln(l);
+          if(dict) {
+              cmpLine = cmpLine.filter!(c => isAlphaNum(c)).array.to!string;
+              cmpPref = cmpPref.filter!(c => isAlphaNum(c)).array.to!string;
+          }
+          if(ignoreCase) {
+              cmpLine = toLower(cmpLine);
+              cmpPref = toLower(cmpPref);
+          }
+          if(cmpLine.startsWith(cmpPref))
+              writeln(l);
     }
 }
 

@@ -2,7 +2,7 @@ module lsof;
 
 import std.stdio;
 import std.file : dirEntries, readLink, readText, SpanMode;
-import std.string : strip;
+import std.string : strip, startsWith;
 import std.algorithm : sort;
 
 bool isNumeric(string s) {

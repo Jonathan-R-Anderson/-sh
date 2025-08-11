@@ -2,7 +2,7 @@ module lsblk;
 
 import std.stdio;
 import std.file : dirEntries, readText, exists, SpanMode;
-import std.string : strip;
+import std.string : strip, startsWith;
 import std.algorithm : sort;
 import std.conv : to;
 import df : humanSize;
@@ -12,7 +12,7 @@ void lsblkCommand(string[] tokens)
     bool bytes = false;
     bool all = false;
     size_t idx = 1;
-    while(idx < tokens.length && tokens[idx].startsWith("-")) {
+      while(idx < tokens.length && tokens[idx].startsWith("-")) {
         auto t = tokens[idx];
         if(t == "-b" || t == "--bytes") bytes = true;
         else if(t == "-a" || t == "--all") all = true;

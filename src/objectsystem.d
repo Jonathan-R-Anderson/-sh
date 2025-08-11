@@ -81,11 +81,11 @@ string introspect(string obj) {
 
 static Object parseSnapshot(string snap) {
     Object o;
-    foreach(part; snap.split(";")) {
-        if(part.length == 0) continue;
-        auto kv = part.split("=", 2);
-        auto key = kv[0];
-        auto val = kv.length > 1 ? kv[1] : "";
+      foreach(part; snap.split(";")) {
+          if(part.length == 0) continue;
+          auto kv = part.split("=");
+          auto key = kv[0];
+          auto val = kv.length > 1 ? kv[1] : "";
         if(key.startsWith("prop:")) {
             auto pkey = key[5 .. $];
             o.props[pkey] = val;
