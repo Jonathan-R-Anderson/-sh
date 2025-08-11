@@ -2,7 +2,7 @@ module ifdown;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system ifdown command with the provided arguments.
 void ifdownCommand(string[] tokens)

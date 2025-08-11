@@ -2,7 +2,7 @@ module ip;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system ip command with the provided arguments.
 void ipCommand(string[] tokens)

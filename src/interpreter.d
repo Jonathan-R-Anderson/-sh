@@ -2,16 +2,16 @@ import std.stdio;
 import std.string;
 import std.array;
 import std.algorithm;
-import std.parallelism;
 import std.range;
 import std.file : chdir, getcwd, dirEntries, SpanMode, readText,
-    copy, rename, remove, mkdir, rmdir, exists;
+    copy, rename, mkdir, rmdir, exists;
+static import std.file;
 import std.process : environment;
-import core.stdc.stdlib : system;
+import syswrap : system;
 version(Posix) import core.sys.posix.unistd : execvp;
 version(Posix) extern(C) int chroot(const char* path);
 import std.regex : regex, matchFirst;
-import std.path : globMatch;
+import std.path : globMatch, dirName;
 import std.conv : to;
 import core.thread : Thread;
 import std.datetime : Clock, SysTime;
@@ -73,7 +73,7 @@ import importcmd;
 import install;
 import iostat;
 import ip;
-import join;
+import joinmod = join;
 import kill;
 import killall;
 import klist;
@@ -179,10 +179,13 @@ void run(string input) {
 void runParallel(string input) {
     auto cmds = input.split("&");
     if(cmds.length > 1) {
+        Thread[] threads;
         foreach(c; cmds) {
-            taskPool.put(() { runCommand(c.strip, false, __LINE__, __FILE__); });
+            auto stripped = c.strip;
+            threads ~= new Thread({ runCommand(stripped, false, __LINE__, __FILE__); });
         }
-        taskPool.finish();
+        foreach(t; threads) t.start();
+        foreach(t; threads) t.join();
     } else {
         runCommand(input.strip, false, __LINE__, __FILE__);
     }
@@ -322,7 +325,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         int a = to!int(tokens[1]);
         int b = to!int(tokens[2]);
         int result;
-        final switch(op) {
+        switch(op) {
             case "+": result = a + b; break;
             case "-": result = a - b; break;
             case "*": result = a * b; break;
@@ -536,7 +539,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         size_t idx = 1;
         while(idx < tokens.length && tokens[idx].startsWith("-")) {
             auto t = tokens[idx];
-            final switch(t) {
+            switch(t) {
                 case "-E": case "--show-ends": showEnds = true; break;
                 case "-n": case "--number": number = true; break;
                 case "-b": case "--number-nonblank": numberNonBlank = true; break;
@@ -854,7 +857,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             return;
         }
         auto path = tokens[1];
-        auto dir = std.path.dirName(path);
+        auto dir = dirName(path);
         if(dir.length == 0) dir = ".";
         writeln(dir);
     } else if(op == "animal_case") {
@@ -868,7 +871,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             animal = inp.strip;
         }
         string legs;
-        final switch(animal) {
+        switch(animal) {
             case "horse": case "dog": case "cat": legs = "four"; break;
             case "man": case "kangaroo": legs = "two"; break;
             default:
@@ -1020,7 +1023,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
         foreach(dir; tokens[1 .. $]) {
             try {
-                std.file.mkdir(dir);
+                mkdir(dir);
             } catch(Exception e) {
                 writeln("mkdir: cannot create directory ", dir);
             }
@@ -1032,7 +1035,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         }
         foreach(dir; tokens[1 .. $]) {
             try {
-                std.file.rmdir(dir);
+                rmdir(dir);
             } catch(Exception e) {
                 writeln("rmdir: failed to remove ", dir);
             }
@@ -1056,7 +1059,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             return;
         }
         try {
-            std.file.copy(tokens[1], tokens[2]);
+            copy(tokens[1], tokens[2]);
         } catch(Exception e) {
             writeln("cp: failed to copy");
         }
@@ -1066,7 +1069,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             return;
         }
         try {
-            std.file.rename(tokens[1], tokens[2]);
+            rename(tokens[1], tokens[2]);
         } catch(Exception e) {
             writeln("mv: failed to move");
         }
@@ -1488,12 +1491,11 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             writeln("fg: " ~ tokens[1] ~ ": no such job");
             return;
         }
-        auto ref job = bgJobs[idx];
-        if(!job.running) {
-            job.running = true;
-            job.thread.start();
+        if(!bgJobs[idx].running) {
+            bgJobs[idx].running = true;
+            bgJobs[idx].thread.start();
         }
-        job.thread.join();
+        bgJobs[idx].thread.join();
         bgJobs = bgJobs.remove(idx);
     } else if(op == "at") {
         if(tokens.length < 3) {
@@ -1506,13 +1508,15 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         auto job = AtJob(nextAtId++, sub, runAt, false);
         atJobs ~= job;
         auto idx = atJobs.length - 1;
-        taskPool.put(() {
+        auto atIdx = idx;
+        auto t = new Thread({
             Thread.sleep(dur!"seconds"(delay));
-            if(!atJobs[idx].canceled) {
+            if(!atJobs[atIdx].canceled) {
                 run(sub);
-                atJobs[idx].canceled = true;
+                atJobs[atIdx].canceled = true;
             }
         });
+        t.start();
         writeln("job ", job.id, " scheduled for ", runAt.toISOExtString());
     } else if(op == "atq") {
         foreach(job; atJobs) {
@@ -1556,7 +1560,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         size_t idx = 1;
         while(idx < tokens.length && tokens[idx].startsWith("-")) {
             foreach(ch; tokens[idx][1 .. $]) {
-                final switch(ch) {
+                switch(ch) {
                     case 'p': print = true; break;
                     case 'x': exportVar = true; break;
                     default: break;
@@ -1592,7 +1596,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
         size_t idx = 1;
         while(idx < tokens.length && tokens[idx].startsWith("-")) {
             foreach(ch; tokens[idx][1 .. $]) {
-                final switch(ch) {
+                switch(ch) {
                     case 'p': print = true; break;
                     case 'n': remove = true; break;
                     default: break;
@@ -1804,7 +1808,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
             writeln("[", job.id, "]\t", status, "\t", job.cmd);
         }
     } else if(op == "join") {
-        join.joinCommand(tokens);
+        joinmod.joinCommand(tokens);
     } else if(op == "kill") {
         kill.killCommand(tokens);
     } else if(op == "killall") {

@@ -2,7 +2,7 @@ module kill;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system kill command with the provided arguments.
 void killCommand(string[] tokens)

@@ -2,7 +2,7 @@ module groupdel;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system groupdel command with the provided arguments.
 void groupdelCommand(string[] tokens)

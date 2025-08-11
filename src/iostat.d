@@ -2,7 +2,7 @@ module iostat;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system iostat command with the provided arguments.
 void iostatCommand(string[] tokens)

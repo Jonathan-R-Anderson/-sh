@@ -2,7 +2,7 @@ module id;
 
 import std.stdio;
 import std.string : join;
-import core.stdc.stdlib : system;
+import syswrap : system;
 
 /// Execute the system id command with the provided arguments.
 void idCommand(string[] tokens)
