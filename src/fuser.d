@@ -1,11 +1,13 @@
 module fuser;
 
 import std.stdio;
-import std.file : dirEntries, readLink, exists;
+import std.file : dirEntries, readLink, exists, SpanMode;
 import std.path : baseName, buildPath;
 import core.sys.posix.signal : kill, SIGKILL;
 import std.conv : to;
 import core.sys.posix.unistd : getpid;
+import std.string : strip, toLower;
+import std.algorithm : startsWith;
 
 /// List processes using a given file. Supports -k to kill them.
 void fuserCommand(string[] tokens)

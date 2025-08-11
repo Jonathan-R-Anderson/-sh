@@ -1,10 +1,11 @@
 module fmt;
 
 import std.stdio;
-import std.string : split, splitLines, strip, join;
+import std.string : split, splitLines, strip, join, stripRight;
 import std.file : readText;
 import std.conv : to;
 import std.ascii : isDigit;
+import std.algorithm : startsWith, count;
 
 string[] formatParagraph(string para, size_t width)
 {

@@ -54,7 +54,7 @@ void egrepCommand(string[] tokens)
         try {
             foreach(line; readText(f).splitLines) {
                 auto m = matchFirst(ignoreCase ? line.toLower : line, re);
-                bool matched = m !is null;
+                bool matched = !m.empty;
                 if(invert) matched = !matched;
                 if(matched) {
                     count++;
