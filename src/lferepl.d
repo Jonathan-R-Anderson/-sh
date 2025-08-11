@@ -401,6 +401,11 @@ Expr parseString(string code) {
     return parser.parseExpr();
 }
 
+Value evalString(string code) {
+    auto ast = parseString(code);
+    return evalExpr(ast);
+}
+
 void loadFile(string path) {
     auto text = readText(path);
     auto ast = parseString(text);

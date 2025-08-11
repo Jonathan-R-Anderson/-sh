@@ -90,6 +90,7 @@ import look;
 import lsblk;
 import lsof;
 import ls;
+import lferepl;
 
 string[] history;
 string[string] aliases;
@@ -201,6 +202,19 @@ string findInPath(string name) {
     return "";
 }
 
+void runScript(string path) {
+    auto content = readText(path);
+    auto lines = content.splitLines();
+    if(lines.length && lines[0].startsWith("#!")) {
+        lines = lines[1 .. $];
+    }
+    foreach(line; lines) {
+        auto trimmed = line.strip;
+        if(trimmed.length == 0) continue;
+        run(trimmed);
+    }
+}
+
 void runBackground(string cmd) {
     // Execute a command asynchronously without waiting and track it
     auto id = nextBgId++;
@@ -219,6 +233,17 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
     scope(exit) callStack.popBack();
 
     history ~= cmd;
+    auto trimmedCmd = cmd.strip;
+    if(trimmedCmd.length > 0 && trimmedCmd[0] == '(') {
+        try {
+            auto result = evalString(trimmedCmd);
+            writeln(valueToString(result));
+        } catch(Exception e) {
+            writeln("Error: ", e.msg);
+        }
+        return;
+    }
+
     auto tokens = cmd.split();
     if(tokens.length == 0) return;
 
@@ -253,6 +278,10 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
     }
 
     auto op = tokens[0];
+    if((op.endsWith(".-sh") || op.endsWith(".sh")) && exists(op)) {
+        runScript(op);
+        return;
+    }
     if(auto en = op in builtinEnabled) {
         if(!*en && op != "enable") {
             auto rc = system(cmd);
@@ -1899,5 +1928,9 @@ void main(string[] args) {
         repl();
         return;
     }
-    run(args[1]);
+    if(exists(args[1])) {
+        runScript(args[1]);
+    } else {
+        run(args[1]);
+    }
 }
