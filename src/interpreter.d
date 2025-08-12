@@ -241,7 +241,7 @@ void runCommand(string cmd, bool skipAlias=false, size_t callLine=0, string call
     history ~= cmd;
     if(interactive) add_history(cmd.toStringz);
     auto trimmedCmd = cmd.strip;
-    if(trimmedCmd.length > 0 && trimmedCmd[0] == '(') {
+    if(isLfeInput(trimmedCmd)) {
         try {
             auto result = evalString(trimmedCmd);
             writeln(valueToString(result));
@@ -1917,6 +1917,16 @@ void loadRc() {
     }
 }
 
+bool isLfeInput(string s) {
+    if(s.length == 0) return false;
+    auto c = s[0];
+    if(c == '(' || c == '\'') return true;
+    if(c == '#') {
+        return s.length > 1 && (s[1] == '(' || s[1] == 'M');
+    }
+    return false;
+}
+
 int parenBalance(string line) {
     int balance = 0;
     bool inString = false;
@@ -1964,7 +1974,7 @@ void repl() {
             line = trimmed;
             writeln(trimmed);
         }
-        if(trimmed.length && trimmed[0] == '(') {
+        if(isLfeInput(trimmed)) {
             int bal = parenBalance(line);
             while(bal > 0) {
                 auto morePrompt = (colorCode ~ "... " ~ reset).toStringz;
