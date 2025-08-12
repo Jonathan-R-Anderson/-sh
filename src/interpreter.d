@@ -1917,6 +1917,29 @@ void loadRc() {
     }
 }
 
+int parenBalance(string line) {
+    int balance = 0;
+    bool inString = false;
+    bool escape = false;
+    foreach(ch; line) {
+        if(inString) {
+            if(escape) {
+                escape = false;
+            } else if(ch == '\\') {
+                escape = true;
+            } else if(ch == '"') {
+                inString = false;
+            }
+            continue;
+        }
+        if(ch == ';') break;
+        if(ch == '"') inString = true;
+        else if(ch == '(') balance++;
+        else if(ch == ')') balance--;
+    }
+    return balance;
+}
+
 void repl() {
     auto ps1 = environment.get("PS1", "sh> ");
     auto colorName = environment.get("PS_COLOR", "");
@@ -1928,18 +1951,34 @@ void repl() {
         auto cLine = readline(prompt);
         if(cLine is null) break;
         scope(exit) free(cLine);
-        string line = std.string.strip(fromStringz(cLine)).idup;
-        if(line == "exit") break;
-        if(line.length == 0) continue;
-        if(auto b = line in keyBindings) {
+        string line = fromStringz(cLine).idup;
+        string trimmed = line.strip;
+        if(trimmed == "exit") break;
+        if(trimmed.length == 0) continue;
+        if(auto b = trimmed in keyBindings) {
             run(*b);
             continue;
         }
-        if(line == "!!" && history.length) {
-            line = history[$-1];
-            writeln(line);
+        if(trimmed == "!!" && history.length) {
+            trimmed = history[$-1];
+            line = trimmed;
+            writeln(trimmed);
         }
-        run(line);
+        if(trimmed.length && trimmed[0] == '(') {
+            int bal = parenBalance(line);
+            while(bal > 0) {
+                auto morePrompt = (colorCode ~ "... " ~ reset).toStringz;
+                auto cMore = readline(morePrompt);
+                if(cMore is null) break;
+                scope(exit) free(cMore);
+                auto nextLine = fromStringz(cMore).idup;
+                line ~= "\n" ~ nextLine;
+                bal += parenBalance(nextLine);
+            }
+            runCommand(line, false, __LINE__, __FILE__);
+            continue;
+        }
+        run(trimmed);
     }
 }
 
