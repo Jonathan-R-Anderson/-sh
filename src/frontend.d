@@ -2,10 +2,18 @@ module frontend;
 
 import lferepl : evalString, valueToString;
 import std.ascii : isWhite;
-import std.string : strip, startsWith, indexOf;
+import std.string : strip, stripLeft, startsWith, indexOf;
 
+// Determine whether a command should be treated as raw LFE input.
+//
+// The original implementation assumed the `:lfe` prefix would appear at
+// the very start of the string.  In practice users often type leading
+// whitespace before the prefix.  We therefore strip leading whitespace
+// before checking and, when a prefix is found, return the remainder of
+// the line with surrounding whitespace removed so it can be passed
+// directly to the evaluator.
 bool forceLfe(ref string line) {
-    auto trimmed = line.strip;
+    auto trimmed = line.stripLeft;
     enum prefix = ":lfe";
     if(trimmed.startsWith(prefix)) {
         // Remove prefix and any following whitespace
@@ -16,12 +24,18 @@ bool forceLfe(ref string line) {
     return false;
 }
 
+// Detect whether the given line should be interpreted as an LFE
+// expression.  Leading whitespace is ignored so that commands like
+// "\t(expr)" are recognised correctly.  Besides traditional list forms,
+// we also handle quoted forms and the map/tuple shorthand used by the
+// LFE REPL.
 bool isLfeInput(string s) {
-    if(s.length == 0) return false;
-    auto c = s[0];
+    auto trimmed = s.stripLeft;
+    if(trimmed.length == 0) return false;
+    auto c = trimmed[0];
     if(c == '(' || c == '\'') return true;
     if(c == '#') {
-        return s.length > 1 && (s[1] == '(' || s[1] == 'M');
+        return trimmed.length > 1 && (trimmed[1] == '(' || trimmed[1] == 'M');
     }
     return false;
 }
