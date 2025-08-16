@@ -17,6 +17,7 @@ import core.thread : Thread;
 import std.datetime : Clock, SysTime;
 import core.time : dur;
 import core.stdc.stdlib : free;
+import frontend : forceLfe, isLfeInput, interpolateLfe;
 import base32;
 import base64;
 import dirname;
@@ -1917,16 +1918,6 @@ void loadRc() {
     }
 }
 
-bool isLfeInput(string s) {
-    if(s.length == 0) return false;
-    auto c = s[0];
-    if(c == '(' || c == '\'') return true;
-    if(c == '#') {
-        return s.length > 1 && (s[1] == '(' || s[1] == 'M');
-    }
-    return false;
-}
-
 int parenBalance(string line) {
     int balance = 0;
     bool inString = false;
@@ -1962,6 +1953,20 @@ void repl() {
         if(cLine is null) break;
         scope(exit) free(cLine);
         string line = fromStringz(cLine).idup;
+        if(forceLfe(line)) {
+            int bal = parenBalance(line);
+            while(bal > 0) {
+                auto morePrompt = (colorCode ~ "... " ~ reset).toStringz;
+                auto cMore = readline(morePrompt);
+                if(cMore is null) break;
+                scope(exit) free(cMore);
+                auto nextLine = fromStringz(cMore).idup;
+                line ~= "\n" ~ nextLine;
+                bal += parenBalance(nextLine);
+            }
+            runCommand(line, false, __LINE__, __FILE__);
+            continue;
+        }
         string trimmed = line.strip;
         if(trimmed == "exit") break;
         if(trimmed.length == 0) continue;
@@ -1988,7 +1993,8 @@ void repl() {
             runCommand(line, false, __LINE__, __FILE__);
             continue;
         }
-        run(trimmed);
+        auto processed = interpolateLfe(line);
+        run(processed.strip);
     }
 }
 

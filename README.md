@@ -13,18 +13,26 @@ link against it when building. To cross compile for a specific target,
  supply the desired architecture flags to the compiler. For example:
 
 ```bash
-ldc2 -mtriple=<target> src/*.d -L-lreadline -of=interpreter
+ldc2 -mtriple=<target> src/*.d -L-lreadline -of=lfe-sh
 ```
 
 Replace `<target>` with the appropriate triple for the operating system described in the `internetcomputer` repository.
 
+Alternatively, a simple `Makefile` is provided; running `make` builds the
+`lfe-sh` binary.
+
 ## Usage
 
 ```
-./interpreter "+ 1 2"  # prints 3
+./lfe-sh "+ 1 2"  # prints 3
 ```
 
-The interpreter now supports a broader set of commands:
+Input lines beginning with `(` are evaluated directly as LFE forms. The
+`:lfe` prefix can force LFE interpretation for non-parenthesized input, and
+inline expressions like `$(lfe (+ 1 2))` or `${lfe:(+ 3 4)}` interpolate LFE
+results into shell commands.
+
+The shell now supports a broader set of commands:
 
 - `echo` – prints its arguments
 - basic arithmetic with `+`, `-`, `*`, and `/`
@@ -58,7 +66,7 @@ The interpreter now supports a broader set of commands:
 - `caller` to display the current call stack frame
 - `exit` to terminate the shell with an optional status code
 
-Running the interpreter with no command argument starts an interactive shell.
+Running `lfe-sh` with no command argument starts an interactive shell.
 You can customize the prompt text using the `PS1` environment variable and its color with `PS_COLOR` (e.g. `PS_COLOR=green`).
 The shell now provides interactive line editing with GNU Readline, so
 you can navigate command history with the Up and Down arrow keys.
