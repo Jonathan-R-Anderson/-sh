@@ -498,6 +498,10 @@ bool matchPattern(Value val, Expr pat, ref string[] varNames, ref Value[string] 
         if(pat.list.length == 0) {
             return val.kind == ValueKind.List && val.list.length == 0;
         }
+        if(pat.list.length == 2 && !pat.list[0].isList && pat.list[0].atom == "quote") {
+            auto qval = quoteValue(pat.list[1]);
+            return valuesEqual(val, qval);
+        }
         if(pat.list.length == 3 && !pat.list[0].isList && pat.list[0].atom == "cons") {
             if(val.kind != ValueKind.List || val.list.length == 0) return false;
             auto headVal = val.list[0];
