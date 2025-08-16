@@ -22,6 +22,8 @@ struct Object {
 
 __gshared Object[string] registry;
 __gshared size_t counter;
+struct Subscription { string obj; string event; }
+__gshared Subscription[size_t] subscriptions;
 
 string createObject(string type) {
     auto id = type ~ "_" ~ to!string(counter++);
@@ -33,11 +35,21 @@ string createObject(string type) {
 }
 
 string instantiate(string classPath) {
+    if(classPath in registry) {
+        auto id = classPath ~ "_" ~ to!string(counter++);
+        auto o = registry[classPath];
+        o.id = id;
+        registry[id] = o;
+        return id;
+    }
     return createObject(classPath);
 }
 
 bool defineClass(string path, string def) {
-    // Placeholder for class definitions
+    auto o = parseSnapshot(def);
+    if(o.id.length == 0) o.id = path;
+    if(o.type.length == 0) o.type = path;
+    registry[path] = o;
     return true;
 }
 
@@ -206,15 +218,23 @@ string[] capabilities(string obj) {
 
 size_t subscribe(string obj, string event) {
     static size_t subId;
+    subscriptions[subId] = Subscription(obj, event);
     return subId++;
 }
 
 bool unsubscribe(size_t id) {
-    return true;
+    if(id in subscriptions) { subscriptions.remove(id); return true; }
+    return false;
 }
 
 bool emit(string obj, string event, string data) {
-    return true;
+    bool dispatched;
+    foreach(sub; subscriptions.values) {
+        if(sub.obj == obj && sub.event == event) {
+            dispatched = true;
+        }
+    }
+    return dispatched;
 }
 
 bool attach(string parent, string child, string aliasName) {
