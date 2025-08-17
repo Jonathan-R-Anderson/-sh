@@ -6,7 +6,7 @@ import std.regex : regex;
 import std.stdio;
 import std.string;
 import std.ascii : isDigit;
-import std.algorithm : canFind, filter, sort, countUntil;
+import std.algorithm : canFind, filter, sort, countUntil, joiner;
 import std.array;
 import std.conv : to;
 import std.utf : encode;
@@ -18,6 +18,7 @@ import core.sync.condition : Condition;
 import syswrap : system;
 version(Posix) import core.sys.posix.unistd : execvp;
 version(Posix) extern(C) int sethostname(const char* name, size_t len);
+import std.process;
 import objectsystem;
 import local;
 import locate;
@@ -244,7 +245,9 @@ class LfeParser : Parser {
             return Expr(false, t.value, null, false, false, false);
         } else if (peek("STRING")) {
             auto t = consume("STRING");
-            return Expr(false, t.value, null, false, false, false);
+            // Strip the surrounding quotes from the string literal
+            auto value = t.value.length > 1 ? t.value[1 .. $-1] : "";
+            return Expr(false, value, null, false, false, false);
         } else if (peek("ATOM")) {
             auto t = consume("ATOM");
             return Expr(false, t.value[1 .. $], null, true, false, false);
@@ -1508,6 +1511,26 @@ Value evalList(Expr e) {
         auto objVal = evalExpr(e.list[1]);
         auto h = objectsystem.verify(valueToString(objVal));
         return atomVal(h);
+    } else if(head == "sh") {
+        if (e.list.length < 2) {
+            throw new Exception("sh: missing command");
+        }
+        string[] cmdArgs;
+        foreach(arg; e.list[1 .. $]) {
+            auto val = evalExpr(arg);
+            cmdArgs ~= formatValue(val);
+        }
+        auto pipes = pipeProcess(cmdArgs);
+        auto output = cast(string) pipes.stdout.byChunk(4096).joiner.array;
+        auto error = cast(string) pipes.stderr.byChunk(4096).joiner.array;
+        auto status = wait(pipes.pid);
+
+        Value[] resultTuple = [
+            num(status),
+            atomVal(output.strip),
+            atomVal(error.strip)
+        ];
+        return tupleVal(resultTuple);
     } else if(head == "exit") {
         Value reason = atomVal("normal");
         if(e.list.length > 1) reason = evalExpr(e.list[1]);
@@ -1584,7 +1607,8 @@ Value evalExpr(Expr e) {
         if(e.isAtom) return atomVal(e.atom);
         if(isNumber(e.atom)) return num(to!double(e.atom));
         if(auto v = e.atom in variables) return *v;
-        return num(0);
+        // If a symbol is not a number and not a variable, treat it as a string atom.
+        return atomVal(e.atom);
     }
     if(e.isTuple) {
         Value[] elems;

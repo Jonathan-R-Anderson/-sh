@@ -1998,7 +1998,7 @@ void repl() {
     }
 }
 
-void main(string[] args) {
+void interpreterMain(string[] args) {
     dirStack ~= getcwd();
     foreach(name; builtinNames) builtinEnabled[name] = true;
     if(args.length < 2) {
