@@ -1,5 +1,5 @@
 DC ?= ldc2
-SRC := $(wildcard src/*.d)
+SRC := $(shell find src -name '*.d')
 TARGET := lfe-sh
 
 .RECIPEPREFIX := >

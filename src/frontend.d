@@ -1,6 +1,6 @@
 module frontend;
 
-import lferepl : evalString, valueToString;
+import lferepl : evalString, valueToString, ValueKind;
 import std.ascii : isWhite;
 import std.string : strip, stripLeft, startsWith, indexOf;
 
@@ -42,6 +42,17 @@ bool isLfeInput(string s) {
 
 string evalToString(string code) {
     auto val = evalString(code);
+
+    // If the result is a tuple that looks like the output of (sh ...),
+    // extract the stdout part for shell interpolation.
+    if (val.kind == ValueKind.Tuple && val.tuple.length == 3 && val.tuple[0].kind == ValueKind.Number) {
+        auto stdout_val = val.tuple[1];
+        if (stdout_val.kind == ValueKind.Atom) {
+            return stdout_val.atom;
+        }
+    }
+
+    // Otherwise, return the standard string representation.
     return valueToString(val);
 }
 
