@@ -1,0 +1,31 @@
+# Language: CalcLang
+# Description: A functional calculator language
+# Author: LFE-SH Team
+# Version: 1.0
+
+## Token Definitions
+TOKEN NUMBER : \d+  (example: 42)  # Numbers
+TOKEN OP : [+\-*/%^]  (example: +)  # Operators
+TOKEN LPAREN : \(  (example: ()  # Left parenthesis
+TOKEN RPAREN : \)  (example: ))  # Right parenthesis
+
+## Grammar Rules
+expr -> term  # Single term  -> evalTerm
+expr -> expr OP term  # Binary operation  -> binaryOp(evalExpr, OP, evalTerm)
+term -> NUMBER  # Number literal  -> parseNumber
+term -> LPAREN expr RPAREN  # Parenthesized expression  -> evalExpr
+term -> function  # Function call  -> callFunction
+function -> func_name LPAREN args RPAREN  # Function  -> callFunction
+
+## Built-in Functions
+FUNC sin(angle)  # Sine function
+    math.sin(angle)
+FUNC cos(angle)  # Cosine function
+    math.cos(angle)
+FUNC sqrt(value)  # Square root
+    math.sqrt(value)
+
+## Runtime Configuration
+SANDBOX enabled
+MAX_TIME 10 seconds
+MAX_MEMORY 5 MB
