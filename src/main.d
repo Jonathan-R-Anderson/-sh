@@ -19,6 +19,10 @@ import tui.shell;
 import tui.panes;
 import tui.widgets;
 import languages.framework;
+import languages.ldk;
+import languages.runtime;
+import network.core;
+import commands.network;
 
 // D bindings for GNU Readline
 extern (C) {
@@ -36,6 +40,9 @@ __gshared KeyBindingManager keyBindingManager;
 __gshared PluginManager pluginManager;
 __gshared ShellContext shellContext;
 __gshared LanguageRegistry languageRegistry;
+__gshared LanguageDevelopmentKit languageDevKit;
+__gshared LanguageRuntime languageRuntime;
+__gshared NetworkManager networkManager;
 __gshared TUIManager tuiManager;
 __gshared TUIShell tuiShell;
 
@@ -211,6 +218,15 @@ void initializeEnhancedShell() {
     // Initialize language framework
     languageRegistry = new LanguageRegistry(configManager);
 
+    // Initialize language development kit
+    languageDevKit = new LanguageDevelopmentKit(configManager, languageRegistry);
+
+    // Initialize language runtime
+    languageRuntime = new LanguageRuntime(configManager, languageDevKit);
+
+    // Initialize network manager
+    networkManager = new NetworkManager(configManager);
+
     // Initialize TUI system
     tuiManager = new TUIManager(configManager);
 
@@ -225,7 +241,7 @@ void initializeEnhancedShell() {
     // Display startup message if enabled
     if (configManager.getConfigBool("SHOW_STARTUP_MESSAGE", true)) {
         Theme currentTheme = themeManager.getCurrentTheme();
-        string welcomeMessage = "Welcome to LFE-SH v1.0 with enhanced TUI support";
+        string welcomeMessage = "Welcome to LFE-SH v1.0 with full TUI, networking, and language support";
         writeln(currentTheme.formatText(welcomeMessage, "info", "bold"));
 
         int loadedPlugins = pluginManager.listLoadedPlugins().length;
@@ -236,6 +252,13 @@ void initializeEnhancedShell() {
                 "normal"
             ));
         }
+
+        // Show available features
+        writeln(currentTheme.formatText(
+            "Features: TUI mode, Network commands, Language development kit",
+            "info",
+            "normal"
+        ));
     }
 }
 
