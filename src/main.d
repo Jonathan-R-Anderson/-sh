@@ -3,11 +3,17 @@ import std.string;
 import core.stdc.stdlib;
 import core.stdc.stdio;
 import core.sys.posix.unistd : isatty, STDIN_FILENO;
+import std.conv : to;
 import frontend;
 import lferepl;
 import shell.executor : execute, initializeShell;
 import shell.parser : parseShellCommand;
 import shell.ast : Node;
+import shell.config;
+import shell.themes;
+import shell.completion;
+import shell.keybindings;
+import shell.plugins;
 
 // D bindings for GNU Readline
 extern (C) {
@@ -16,6 +22,14 @@ extern (C) {
     int read_history(const char* filename);
     int write_history(const char* filename);
 }
+
+// Global configuration and systems
+__gshared ConfigManager configManager;
+__gshared ThemeManager themeManager;
+__gshared CompletionEngine completionEngine;
+__gshared KeyBindingManager keyBindingManager;
+__gshared PluginManager pluginManager;
+__gshared ShellContext shellContext;
 
 // Processes a single line of input (either shell or LFE)
 void processLine(string line) {
@@ -41,7 +55,7 @@ void processLine(string line) {
 // The main interactive shell loop
 void runInteractiveShell() {
     char* line_read;
-    while ((line_read = readline("lfe-sh> ")) !is null) {
+    while ((line_read = readline(getPromptString().toStringz)) !is null) {
         if (line_read[0] != '\0') {
             add_history(line_read);
         }
@@ -53,15 +67,168 @@ void runInteractiveShell() {
             break;
         }
 
+        // Handle special commands
+        if (line.startsWith("tui ")) {
+            handleTUICommand(line[4..$].strip());
+            continue;
+        }
+
+        if (line == "themes") {
+            themeManager.listThemes();
+            continue;
+        }
+
+        if (line.startsWith("theme ")) {
+            string themeName = line[6..$].strip;
+            themeManager.setTheme(themeName);
+            writeln("Theme switched to: " ~ themeName);
+            continue;
+        }
+
+        if (line == "plugins") {
+            pluginManager.printStatistics();
+            continue;
+        }
+
+        if (line.startsWith("plugin ")) {
+            handlePluginCommand(line[7..$].strip());
+            continue;
+        }
+
+        // Notify plugins before command execution
+        string[] args = line.split();
+        if (args.length > 0) {
+            pluginManager.onCommandExecuted(args[0], args[1..$]);
+        }
+
         processLine(line);
     }
+
+    // Notify plugins of shutdown
+    pluginManager.onShellShutdown();
     writeln("\nexit");
+}
+
+// Handle TUI-specific commands
+void handleTUICommand(string command) {
+    if (command == "on" || command == "enable") {
+        writeln("TUI mode not yet implemented");
+    } else if (command == "off" || command == "disable") {
+        writeln("Already in terminal mode");
+    } else if (command == "status") {
+        writeln("TUI mode: disabled (coming soon!)");
+    } else {
+        writeln("Unknown TUI command. Available: on, off, status");
+    }
+}
+
+// Handle plugin commands
+void handlePluginCommand(string command) {
+    string[] parts = command.split();
+    if (parts.length == 0) return;
+
+    string action = parts[0];
+    string pluginName = parts.length > 1 ? parts[1] : "";
+
+    if (action == "list") {
+        string[] plugins = pluginManager.listLoadedPlugins();
+        if (plugins.length == 0) {
+            writeln("No plugins loaded");
+        } else {
+            writeln("Loaded plugins:");
+            foreach(name; plugins) {
+                auto metadata = pluginManager.getPluginMetadata(name);
+                writeln("  " ~ name ~ " v" ~ metadata.version ~ " - " ~ metadata.description);
+            }
+        }
+    } else if (action == "enable" && pluginName.length > 0) {
+        if (pluginManager.enablePlugin(pluginName)) {
+            writeln("Plugin '" ~ pluginName ~ "' enabled");
+        } else {
+            writeln("Failed to enable plugin '" ~ pluginName ~ "'");
+        }
+    } else if (action == "disable" && pluginName.length > 0) {
+        if (pluginManager.disablePlugin(pluginName)) {
+            writeln("Plugin '" ~ pluginName ~ "' disabled");
+        } else {
+            writeln("Failed to disable plugin '" ~ pluginName ~ "'");
+        }
+    } else if (action == "reload" && pluginName.length > 0) {
+        if (pluginManager.reloadPlugin(pluginName)) {
+            writeln("Plugin '" ~ pluginName ~ "' reloaded");
+        } else {
+            writeln("Failed to reload plugin '" ~ pluginName ~ "'");
+        }
+    } else {
+        writeln("Unknown plugin command. Available: list, enable <name>, disable <name>, reload <name>");
+    }
+}
+
+// Initialize enhanced shell systems
+void initializeEnhancedShell() {
+    // Initialize configuration system
+    configManager = new ConfigManager();
+    shellContext = configManager.getShellContext();
+
+    // Initialize theme system
+    themeManager = new ThemeManager(configManager);
+
+    // Initialize completion engine
+    completionEngine = new CompletionEngine(configManager);
+
+    // Initialize key bindings
+    keyBindingManager = new KeyBindingManager(configManager);
+
+    // Initialize plugin system
+    pluginManager = new PluginManager(configManager);
+
+    // Load plugins
+    foreach(pluginPath; pluginManager.discoverPlugins()) {
+        pluginManager.loadPlugin(pluginPath);
+    }
+
+    // Notify plugins of shell startup
+    pluginManager.onShellStartup();
+
+    // Display startup message if enabled
+    if (configManager.getConfigBool("SHOW_STARTUP_MESSAGE", true)) {
+        Theme currentTheme = themeManager.getCurrentTheme();
+        string welcomeMessage = "Welcome to LFE-SH v1.0 with enhanced TUI support";
+        writeln(currentTheme.formatText(welcomeMessage, "info", "bold"));
+
+        int loadedPlugins = pluginManager.listLoadedPlugins().length;
+        if (loadedPlugins > 0) {
+            writeln(currentTheme.formatText(
+                "Loaded " ~ to!string(loadedPlugins) ~ " plugins",
+                "success",
+                "normal"
+            ));
+        }
+    }
+}
+
+// Get formatted prompt string
+string getPromptString() {
+    string promptTemplate = configManager.getConfig("PS1", "lfe-sh> ");
+    Theme currentTheme = themeManager.getCurrentTheme();
+    string promptColor = configManager.getConfig("PS_COLOR", "green");
+
+    // Simple template substitution
+    string prompt = promptTemplate;
+
+    // Add theme formatting
+    if (promptColor != "default") {
+        prompt = currentTheme.formatText(prompt, promptColor, "prompt");
+    }
+
+    return prompt;
 }
 
 // Main entry point for the shell
 void main(string[] args) {
     if (isatty(STDIN_FILENO)) {
         initializeShell();
+        initializeEnhancedShell();
         runInteractiveShell();
     } else {
         // Non-interactive mode (e.g., from a pipe)
