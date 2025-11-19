@@ -14,6 +14,11 @@ import shell.themes;
 import shell.completion;
 import shell.keybindings;
 import shell.plugins;
+import tui.core;
+import tui.shell;
+import tui.panes;
+import tui.widgets;
+import languages.framework;
 
 // D bindings for GNU Readline
 extern (C) {
@@ -30,6 +35,9 @@ __gshared CompletionEngine completionEngine;
 __gshared KeyBindingManager keyBindingManager;
 __gshared PluginManager pluginManager;
 __gshared ShellContext shellContext;
+__gshared LanguageRegistry languageRegistry;
+__gshared TUIManager tuiManager;
+__gshared TUIShell tuiShell;
 
 // Processes a single line of input (either shell or LFE)
 void processLine(string line) {
@@ -112,14 +120,32 @@ void runInteractiveShell() {
 // Handle TUI-specific commands
 void handleTUICommand(string command) {
     if (command == "on" || command == "enable") {
-        writeln("TUI mode not yet implemented");
+        enterTUIMode();
     } else if (command == "off" || command == "disable") {
         writeln("Already in terminal mode");
     } else if (command == "status") {
-        writeln("TUI mode: disabled (coming soon!)");
+        writeln("TUI mode: available - use 'tui on' to enter");
     } else {
         writeln("Unknown TUI command. Available: on, off, status");
     }
+}
+
+// Enter TUI mode
+void enterTUIMode() {
+    if (tuiShell is null) {
+        tuiShell = new TUIShell(tuiManager, configManager, pluginManager, languageRegistry);
+    }
+
+    writeln("Entering TUI mode...");
+    writeln("Press F1 for help, Ctrl+Q to exit");
+
+    try {
+        tuiShell.enterTUIMode();
+    } catch (Exception e) {
+        writeln("Error in TUI mode: ", e.msg);
+    }
+
+    writeln("Exited TUI mode");
 }
 
 // Handle plugin commands
@@ -181,6 +207,12 @@ void initializeEnhancedShell() {
 
     // Initialize plugin system
     pluginManager = new PluginManager(configManager);
+
+    // Initialize language framework
+    languageRegistry = new LanguageRegistry(configManager);
+
+    // Initialize TUI system
+    tuiManager = new TUIManager(configManager);
 
     // Load plugins
     foreach(pluginPath; pluginManager.discoverPlugins()) {
